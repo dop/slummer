@@ -10,7 +10,14 @@
 (defun elem (tag &optional (properties ({})) (children ([])))
   "TAG is an html tag, PROPS is an object and CHILDREN is an array of elements
  The whole structure represents a DOM tree fragment."
-  ({} tag tag properties properties children children))
+  ({} tag tag
+      properties properties
+      ;; if children are not elems they are implicitly converted to strings
+      children (mapcar (lambda (child)
+                         (if (not (@ child tag))
+                             (+ "" child)
+                             child))
+                       children)))
 
 (export elem)
 
@@ -22,7 +29,7 @@ field of EL."
 (defun elems-diff? (el1 el2)
   "Returns T if EL1 and EL2 are different enough to require re-rendering."
   (or (not (equal (typeof el1) (typeof el2)))
-      (and (stringp el1) (not (equal el2 el2)))
+      (and (stringp el1) (not (equal el1 el2)))
       (not (equal (@ el1 tag) (@ el2 tag)))))
 
 
@@ -83,7 +90,6 @@ array."
 (defun realize-elem (el)
   "The main DOM node builder. Takes an ELEM called El and returns a new DOM
 node."
-  (@> console (log el))
   (if (stringp el)
       (chain document (create-text-node el))
       (let ((new-node (chain document (create-element (@ el tag)))))
