@@ -49,11 +49,22 @@
 
 
 (defpsmacro defmodule (name &rest body)
-  `(defvar ,name
-     ((lambda ()
-        (let ((*exports* ({})))
-          (progn ,@body)
-          *exports*)))))
+  (cond
+    ((symbolp name)
+     `(defvar ,name
+        ((lambda ()
+           (let ((*exports* ({})))
+             (progn ,@body)
+             *exports*)))))
+
+    ((listp name)
+     `(setf (@ ,@name)
+            ((lambda ()
+               (let ((*exports* ({})))
+                 (progn ,@body)
+                 *exports*)))))))
+
+
 
 (defpsmacro export (name)
   `(setf (@ *exports* ,name) ,name))
