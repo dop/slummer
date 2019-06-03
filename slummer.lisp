@@ -1,8 +1,12 @@
 ;;;; slummer.lisp
 
+(named-readtables:in-readtable :parenscript)
 (in-package #:slummer)
 
-(ps:defpsmacro defelems (&rest names)
+(defpsmacro {} (&rest args)
+  `(ps:create ,@args))
+
+(defpsmacro defelems (&rest names)
   (unless (null names)
     `(progn
       (defun ,(car names) (props &rest children)
@@ -24,7 +28,7 @@
             defs))
 
 
-(ps:defpsmacro defslummer (name definitions &rest setup)
+(defpsmacro defapp (name definitions &rest setup)
   `(defun ,name (attachment)
      (let* ((*state* nil)
             (*view* nil)
@@ -44,3 +48,15 @@
        (update-elem *attachment* nil *virtual))))
 
 
+(defpsmacro defmodule (name &rest body)
+  `(defvar ,name
+     ((lambda ()
+        (let ((*exports* ({})))
+          (progn ,@body)
+          *exports*)))))
+
+(defpsmacro export (name)
+  `(setf (@ *exports* ,name) ,name))
+
+(defpsmacro import-from (module-name &rest symbols)
+  `(progn ,@(mapcar (lambda (s) (list 'defvar s (list '@ module-name s))) symbols)))

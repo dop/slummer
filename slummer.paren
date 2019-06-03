@@ -1,6 +1,6 @@
 ;;;; Library for building SPAs in Parenscript
 
-(in-package #:slummer.paren)
+(in-package #:slummer)
 
 ;;; The core virtual DOM type and some utility functions
 
@@ -124,45 +124,36 @@ node."
                             idx)))))))
 
 
-;; (defvar *handler-registry* (create))
-
-;; (defmacro handla (name lambda-list &rest body)
-;;   `(if (@ *handler-registry* ,name) (@ *handler-registry* ,name)
-;;        (progn
-;;          (setf (@ *handler-registry* ,name)
-;;                (lambda ,lambda-list ,@body))
-;;          (@ *handler-registry* ,name))))
 
 ;;; HTML builders for virtual DOM elements
 ;;; see https://developer.mozilla.org/en-US/docs/Web/HTML/Element
 
-
-(slummer::defelems
+(defelems
     footer header h1 h2 h3 h4 h5 h6 nav section)
 
 ;; text content
-(slummer::defelems
+(defelems
     blockquote dd div dl dt figcaption figure hr li ol p pre ul)
 
 ;; inline text semantics
-(slummer::defelems
+(defelems
     a b br code em i q  s small span strong sub sup time )
 
 ;; multimedia
-(slummer::defelems
+(defelems
     audio img track video)
 
 ;; canvas
-(slummer::defelems canvas)
+(defelems canvas)
 
 ;; forms
-(slummer::defelems
+(defelems
   button datalist fieldset form input label legend meter
   optgroup option select textarea)
 
 
 ;; Define a new web component application
-(slummer::defslummer click-test
+(defapp click-test
     ((:handler click-handler (event)
                (set :click-count (+ 1 (get :click-count))))
 
@@ -188,3 +179,6 @@ node."
 
 ;; install the same app but with its own private state again elsewhere
 (click-test (chain document (get-element-by-id "my-other-clicker")))
+
+
+
