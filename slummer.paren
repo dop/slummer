@@ -7,7 +7,7 @@
 
 ;;; The core virtual DOM type and some utility functions
 
-(defun elem (tag &optional (props ({})) &rest children)
+(defun elem (tag &optional (properties ({})) (children ([])))
   "TAG is an html tag, PROPS is an object and CHILDREN is an array of elements
  The whole structure represents a DOM tree fragment."
   ({} tag tag properties properties children children))
@@ -83,6 +83,7 @@ array."
 (defun realize-elem (el)
   "The main DOM node builder. Takes an ELEM called El and returns a new DOM
 node."
+  (@> console (log el))
   (if (stringp el)
       (chain document (create-text-node el))
       (let ((new-node (chain document (create-element (@ el tag)))))
@@ -171,3 +172,13 @@ node."
  optgroup option select textarea
  )
 )
+
+
+(defmodule (*slummer* *util*)
+
+  (defun ->string (arg)
+    (+ "" arg))
+
+  (export ->string))
+
+

@@ -6,6 +6,9 @@
 (defpsmacro {} (&rest args)
   `(ps:create ,@args))
 
+(defpsmacro @> (&rest args)
+  `(ps:chain ,@args))
+
 (defpsmacro defelems (&rest names)
   (unless (null names)
     `(progn
@@ -14,21 +17,7 @@
       (defelems ,@(cdr names)))))
 
 
-
-
-(defun defs->pairs (defs)
-    (mapcar (lambda (def)
-              (case (car def)
-                ;; (:handler name (event) ... forms ...) -> (name (lambda (event) .. forms ..))
-                (:handler (destructuring-bind (name lambda-list . body) (cdr def)
-                            (list name (append (list 'lambda lambda-list) body))))
-                ;; (:view name view-form) -> (name (lambda () view-form))
-                (:view (destructuring-bind (name view-form) (cdr def)
-                         (list name (list 'lambda (list) view-form))))))
-            defs))
-
-
-(defpsmacro defapp (name definitions &rest setup)
+(defpsmacro defapp (name &rest setup)
   `(defun ,name (attachment)
      (let* ((*state* nil)
             (*view* nil)
@@ -36,16 +25,21 @@
             (*attachment* attachment)
             (*render* (lambda ()
                         (let ((new-virtual (*view*)))
-                          (update-elem *attachment* *virtual* new-virtual)
+                          (chain *slummer* (update-elem *attachment* *virtual* new-virtual))
                           (setf *virtual* new-virtual))))
             (get (lambda (prop) (getprop *state* prop)))
             (set (lambda (prop val)
                    (setf (getprop *state* prop) val)
                    (*render*)))))
-     (let* ,(defs->pairs definitions)
        (progn ,@setup)
        (setf *virtual* (*view*))
-       (update-elem *attachment* nil *virtual))))
+       (chain *slummer* (update-elem *attachment* nil *virtual*))))
+
+(defpsmacro defhandler (name lambda-list &rest body)
+  `(defun ,name ,lambda-list ,@body))
+
+(defpsmacro defview (name view-form)
+  `(defun ,name () ,view-form))
 
 
 (defpsmacro defmodule (name &rest body)
@@ -72,5 +66,9 @@
                  (list 'setf (list '@ '*exports* name) name))
                names)))
 
-(defpsmacro import-from (module-name &rest symbols)
-  `(progn ,@(mapcar (lambda (s) (list 'defvar s (list '@ module-name s))) symbols)))
+(defpsmacro import-from (module-name &rest symbs)
+  `(progn ,@(mapcar (lambda (s)
+                      (if (symbolp module-name)
+                          (list 'defvar s (list '@ module-name s))
+                          (list 'defvar s (append (cons '@ module-name) (list s)))))
+                    symbs)))

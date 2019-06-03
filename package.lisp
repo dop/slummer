@@ -10,6 +10,11 @@
    #:defapp
    #:defelems
    #:defmodule
+   #:defhandler
+   #:defview
+   #:export
+   #:import-from
+   #:@>
    ))
 
 ;; (defpackage #:slummer.paren
