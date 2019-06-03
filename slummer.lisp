@@ -26,21 +26,18 @@
             (*render* (lambda ()
                         (let ((new-virtual (*view*)))
                           (chain *slummer* (update-elem *attachment* *virtual* new-virtual))
-                          (setf *virtual* new-virtual))))
-            (get (lambda (prop) (getprop *state* prop)))
-            (set (lambda (prop val)
-                   (setf (getprop *state* prop) val)
-                   (*render*)))))
+                          (setf *virtual* new-virtual)))))
        (progn ,@setup)
        (setf *virtual* (*view*))
-       (chain *slummer* (update-elem *attachment* nil *virtual*))))
+       (chain *slummer* (update-elem *attachment* nil *virtual*)))))
 
-(defpsmacro defhandler (name lambda-list &rest body)
-  `(defun ,name ,lambda-list ,@body))
+(defpsmacro defactive (name lambda-list &rest body)
+  `(defun ,name ,lambda-list
+     (progn ,@body)
+     (*render*)))
 
 (defpsmacro defview (name view-form)
   `(defun ,name () ,view-form))
-
 
 (defpsmacro defmodule (name &rest body)
   (cond
