@@ -66,8 +66,11 @@
 
 
 
-(defpsmacro export (name)
-  `(setf (@ *exports* ,name) ,name))
+(defpsmacro export (&rest names)
+  `(progn
+     ,@(mapcar (lambda (name)
+                 (list 'setf (list '@ '*exports* name) name))
+               names)))
 
 (defpsmacro import-from (module-name &rest symbols)
   `(progn ,@(mapcar (lambda (s) (list 'defvar s (list '@ module-name s))) symbols)))

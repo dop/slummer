@@ -2,12 +2,17 @@
 
 (in-package #:slummer)
 
+
+(defmodule *slummer*
+
 ;;; The core virtual DOM type and some utility functions
 
 (defun elem (tag &optional (props ({})) &rest children)
   "TAG is an html tag, PROPS is an object and CHILDREN is an array of elements
  The whole structure represents a DOM tree fragment."
   ({} tag tag properties properties children children))
+
+(export elem)
 
 (defun elem-prop (el prop)
   "A handy function to retrieve the property named PROP from the PROPERTIES
@@ -123,10 +128,15 @@ node."
                             (getprop new-elem 'children idx)
                             idx)))))))
 
+(export update-elem)
 
+)
 
+(defmodule (*slummer* *html*)
 ;;; HTML builders for virtual DOM elements
 ;;; see https://developer.mozilla.org/en-US/docs/Web/HTML/Element
+
+(import-from *slummer* elem)
 
 (defelems
     footer header h1 h2 h3 h4 h5 h6 nav section)
@@ -151,34 +161,13 @@ node."
   button datalist fieldset form input label legend meter
   optgroup option select textarea)
 
-
-;; Define a new web component application
-(defapp click-test
-    ((:handler click-handler (event)
-               (set :click-count (+ 1 (get :click-count))))
-
-     (:view main-view
-            (div ()
-                 (h1 () (get :title))
-                 (clicker)))
-
-     (:view clicker
-            (div ()
-                 (p ()
-                    "count: "
-                    (get :click-count))
-
-                 (button ({} :onclick click-handler)
-                         "Click Me!"))))
-
-  (setf *view* main-view)
-  (setf *state* ({} :click-count 0 :title "Click Your 👾 Out")))
-
-;; "install it" into the page
-(click-test (chain document (get-element-by-id "my-clicker")))
-
-;; install the same app but with its own private state again elsewhere
-(click-test (chain document (get-element-by-id "my-other-clicker")))
-
-
-
+(export
+ footer header h1 h2 h3 h4 h5 h6 nav section
+ blockquote dd div dl dt figcaption figure hr li ol p pre ul
+ a b br code em i q  s small span strong sub sup time
+ audio img track video
+ canvas
+ button datalist fieldset form input label legend meter
+ optgroup option select textarea
+ )
+)
