@@ -6,16 +6,21 @@
 (defpackage #:slummer
   (:use #:cl #:parenscript)
   (:export
+   ;; convenience macros
+   #:@>
    #:{}
-   #:defapp
+
+   ;; defines functions for semantic virtual dom element creation
    #:defelems
+
+   ;; modularity macros
    #:defmodule
-   #:defhandler
-   #:defview
    #:export
    #:import-from
-   #:@>
+
+   ;; reactive making applications
+   #:defapp
+   #:defactive
+   #:defview
    ))
 
-;; (defpackage #:slummer.paren
-;;   (:use #:parenscript #:slummer))
