@@ -4,7 +4,6 @@
 
 
 (defmodule *slummer*
-
 ;;; The core virtual DOM type and some utility functions
 
     (defun elem (tag &optional (properties ({})) (children ([])))
@@ -19,12 +18,13 @@
                                  child))
                            children)))
 
-  (export elem)
-
   (defun elem-prop (el prop)
     "A handy function to retrieve the property named PROP from the PROPERTIES
 field of EL."
     (getprop el 'properties prop))
+
+  (defun elem-prop! (el prop val)
+    (setf (getprop el 'properties prop) val))
 
   (defun elems-diff? (el1 el2)
   "Returns T if EL1 and EL2 are different enough to require re-rendering."
@@ -121,7 +121,7 @@ node."
              (chain parent-node
                     (replace-child (realize-elem new-elem) child-node)))
 
-            ((not (stringp new-elem)) ; if we have a non-string node 
+            ((not (stringp new-elem)) ; if we have a non-string node
              ;; first we update the child node's properties
              (update-properties child-node
                                 (@ old-elem properties)
@@ -135,7 +135,7 @@ node."
                               (getprop new-elem 'children idx)
                               idx)))))))
 
-  (export update-elem))
+  (export elem elem-prop elem-prop! update-elem)) ; end defmodule *slummer*
 
 
 
@@ -143,7 +143,7 @@ node."
 ;;; HTML builders for virtual DOM elements
 ;;; see https://developer.mozilla.org/en-US/docs/Web/HTML/Element
 
-    (import-from *slummer* elem)
+  (import-from *slummer* elem)
 
   (defelems
       footer header h1 h2 h3 h4 h5 h6 nav section)
