@@ -22,5 +22,11 @@
    #:defapp
    #:defactive
    #:defview
+
+   ;; making pages
+   #:*js-root*
+   #:*css-root*
+   #:*resource-root*
+   #:defpage
    ))
 

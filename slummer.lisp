@@ -3,6 +3,8 @@
 (named-readtables:in-readtable :parenscript)
 (in-package #:slummer)
 
+;;; Parenscript Macros
+
 ;; NB: The following macro exists b/c ps:{} wasn't working for some reason
 (defpsmacro {} (&rest args)
   "A convenience macro for building object literals."
@@ -90,3 +92,50 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
                             (list 'defvar local (list '@ module-name foreign))
                             (list 'defvar local (append (cons '@ module-name) (list foreign))))))
                       symbs)))
+
+
+;;; Spinneret Macros & Functions
+
+(defvar *js-root* ""
+  "This special variable designates a URL root prepended to javascript file
+  names passed to DEFPAGE.")
+
+(defun make-scripts (&optional source-names)
+  (mapcar (lambda (s)
+            (list :tag :name "script"
+                       :attrs `(list :src (concatenate 'string *js-root* ,s))))
+          (append '("ps-prelude.js" "slummer.js") source-names)))
+
+
+(defvar *css-root* ""
+  "This special variable designates a URL root prepended to stylsheet file names
+  that are passed to DEFPAGE")
+
+(defun make-styles (&optional source-names)
+  (mapcar (lambda (s)
+            (list :tag :name "link"
+                       :attrs `(list :rel "stylesheet" :type "text/css"
+                                     :href (concatenate 'string *css-root* ,s))))
+          source-names))
+
+(defvar *resource-root* "/" )
+(defun make-resource (path)
+  (concatenate 'string *resource-root* resource))
+
+
+(defmacro defpage ((&key (title "Slumming It") styles scripts)  &body body)
+  `(spinneret:with-html-string
+     (:doctype)
+     (:html
+      (:head
+       (:title ,title)
+       ,@(make-styles styles))
+      (:body
+       (:div ,@body)
+       ,@(make-scripts scripts)))))
+
+(defmacro with-site-context ((&key js css resource) &body body)
+  `(let ((*js-root* (if ,js ,js *js-root*))
+         (*css-root* (if ,css ,css *css-root*))
+         (*resource-root* (if ,resource ,resource *resource-root*)))
+     ,@body))
