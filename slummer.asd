@@ -1,9 +1,9 @@
 ;;;; slummer.asd
 
 (asdf:defsystem #:slummer
-  :description "Describe slummer here"
-  :author "Your Name <your.name@example.com>"
-  :license  "Specify license here"
+  :description "Lisp visits the Browser."
+  :author "Boutade <thegoofist@protonmail.com>"
+  :license  "AGPLv3"
   :version "0.0.1"
   :serial t
   :depends-on (#:parenscript #:lass #:spinneret)
