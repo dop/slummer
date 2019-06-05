@@ -122,9 +122,10 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
 (defun make-resource (path)
   (concatenate 'string *resource-root* resource))
 
+(defvar *site-data* '())
 
-(defmacro defpage ((&key (title "Slumming It") styles scripts)  &body body)
-  `(spinneret:with-html-string
+(defmacro defpage (path (&key (title "Slumming It") styles scripts)  &body body)
+  `(push (cons ,path (spinneret:with-html-string
      (:doctype)
      (:html
       (:head
@@ -133,9 +134,21 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
       (:body
        (:div ,@body)
        ,@(make-scripts scripts)))))
+         *site-data*))
 
-(defmacro with-site-context ((&key js css resource) &body body)
-  `(let ((*js-root* (if ,js ,js *js-root*))
+
+(defvar *site-file-root* ""
+  "The root directory relative to the file system where static content will be written.")
+
+
+(defmacro with-site ((&key site js css resource) &body body)
+  `(let ((*site-data* nil)
+         (*site-file-root* (if ,site ,site *site-file-root*))
+         (*js-root* (if ,js ,js *js-root*))
          (*css-root* (if ,css ,css *css-root*))
          (*resource-root* (if ,resource ,resource *resource-root*)))
      ,@body))
+
+
+
+

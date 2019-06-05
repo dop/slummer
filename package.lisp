@@ -23,10 +23,11 @@
    #:defactive
    #:defview
 
-   ;; making pages
+   ;; making sites & pages
    #:*js-root*
    #:*css-root*
    #:*resource-root*
    #:defpage
+   #:with-site
    ))
 
