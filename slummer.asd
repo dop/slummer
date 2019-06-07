@@ -6,6 +6,6 @@
   :license  "AGPLv3"
   :version "0.0.1"
   :serial t
-  :depends-on (#:parenscript #:lass #:spinneret)
+  :depends-on (#:parenscript #:lass #:spinneret #:cl-strings #:alexandria)
   :components ((:file "package")
                (:file "slummer")))

@@ -100,6 +100,21 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
   "This special variable designates a URL root prepended to javascript file
   names passed to DEFPAGE.")
 
+(defvar *css-root* ""
+  "This special variable designates a URL root prepended to stylsheet file names
+  that are passed to DEFPAGE")
+
+(defvar *resource-root* "/" )
+
+(defvar *site-data* '())
+
+(defvar *site-file-root* ""
+  "The root directory, from the perspective of the browser, used in generating URLs.")
+
+(defvar *source-root* ""
+  "The root directory, relative to to current working directory, where project code is located")
+
+
 (defun make-scripts (&optional source-names)
   (mapcar (lambda (s)
             (list :tag :name "script"
@@ -107,9 +122,6 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
           (append '("ps-prelude.js" "slummer.js") source-names)))
 
 
-(defvar *css-root* ""
-  "This special variable designates a URL root prepended to stylsheet file names
-  that are passed to DEFPAGE")
 
 (defun make-styles (&optional source-names)
   (mapcar (lambda (s)
@@ -118,37 +130,90 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
                                      :href (concatenate 'string *css-root* ,s))))
           source-names))
 
-(defvar *resource-root* "/" )
+
 (defun make-resource (path)
   (concatenate 'string *resource-root* resource))
 
-(defvar *site-data* '())
+(defun add-to-site (name thing)
+  (push (cons name thing) *site-data*))
+
 
 (defmacro defpage (path (&key (title "Slumming It") styles scripts)  &body body)
-  `(push (cons ,path (spinneret:with-html-string
-     (:doctype)
-     (:html
-      (:head
-       (:title ,title)
-       ,@(make-styles styles))
-      (:body
-       (:div ,@body)
-       ,@(make-scripts scripts)))))
-         *site-data*))
+  `(add-to-site
+    ,path
+    (spinneret:with-html-string
+      (:doctype)
+      (:html
+       (:head
+        (:title ,title)
+        ,@(make-styles styles))
+       (:body
+        (:div ,@body)
+        ,@(make-scripts scripts))))))
 
 
-(defvar *site-file-root* ""
-  "The root directory relative to the file system where static content will be written.")
 
-
-(defmacro with-site ((&key site js css resource) &body body)
+(defmacro define-site-in-context ((&key js css resource) &body body)
   `(let ((*site-data* nil)
-         (*site-file-root* (if ,site ,site *site-file-root*))
          (*js-root* (if ,js ,js *js-root*))
          (*css-root* (if ,css ,css *css-root*))
          (*resource-root* (if ,resource ,resource *resource-root*)))
-     ,@body))
+     (progn ,@body)
+     *site-data*))
 
 
+(defun change-filename-ext (name ext)
+  (cl-strings:join
+   (reverse
+    (cons ext
+          (cdr
+           (reverse (cl-strings:split name ".")))))
+   :separator "."))
 
+
+(defun include-script (name)
+  (cond ((cl-strings:ends-with name ".js")
+         (add-to-site  name (alexandria:read-file-into-string name)))
+
+        ((cl-strings:ends-with ".paren")
+         (add-to-site (change-filename-ext name "js")
+                      (ps:ps-compile-file name)))
+        (t
+         (error "~s is neither a Javascript nor Parenscript file." name ))))
+
+
+(defmacro defscript (name &body body)
+  `(add-to-site ,name
+                (ps:ps ,@body)))
+
+(defun include-style (name)
+  (cond ((cl-strings:ends-with ".css")
+         (add-to-site name (alexandria:read-file-into-string name)))
+        ((cl-strings:ends-with ".lass")
+         (error "Inclusion of .lass files not yet implemented"))
+        (t
+         (error "~s is neither a CSS nor LASS file." name))))
+
+;; TODO
+;; defmacro defstyle
+
+(defun include-page (name)
+  (cond ((cl-strings:ends-with ".html")
+         (add-to-site name (alexandria:read-file-into-string name)))
+        ((cl-strings:ends-with ".lisp")
+         (cl-add-to-site
+          (change-fielname-ext name "html")
+          (eval `(spinneret:with-html-string
+                   ,(read-from-string
+                     (alexandria:read-file-into-string name))))))
+        (t
+         (error "~s is neither an HTML nor LISP file." name))))
+
+
+(defun build-site (site-data)
+  (loop for (path . content) in site-data
+        do (progn
+             (let ((filename (concatenate 'string "build/" path)))
+               (ensure-directories-exist (directory-namestring filename))
+               (alexandria:write-string-into-file content filename :if-exists :supersede)))))
 
