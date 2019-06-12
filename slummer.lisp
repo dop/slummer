@@ -112,6 +112,10 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
 (defvar *site-data*) ; YOU MUST PROVIDN BINDINGS FOR THIS BEFORE CALLING ANY OF
                                         ; THE DEF-THING FUNCTIONS
 
+(defvar *site-wide-scripts* NIL)
+(defvar *site-wide-styles* NIL)
+
+
 (defmacro with-site-context ((&key site root js css media) &body body)
   `(let ((*site-data (if ,site ,site *site-data*))
          (*site-root* (if ,site ,site *site-root*)) ;; basicaly just used to include html?
@@ -120,6 +124,19 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
          (*media-root* (if ,media ,media *media-root*)))
      (progn ,@body)
      *site-data*))
+
+(defmacro with-styles (file-list &body body)
+  `(let ((*site-wide-styles* ',file-list))
+     ,@body))
+
+(defmacro with-scripts (file-list &body body)
+  `(let ((*site-wide-scripts* ',file-list))
+     ,@body))
+
+(defmacro with-scripts-and-styles ((scripts styles) &body body)
+  `(let ((*site-wide-scripts* ',scripts)
+         (*site-wide-styles* ',styles))
+     ,@body))
 
 (defun fresh-site ()
   "Creates a fresh site data object"
@@ -134,7 +151,7 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
   (mapcar (lambda (s)
             (list :tag :name "script"
                        :attrs `(list :src (concatenate 'string *js-root* ,s))))
-          (append '("ps-prelude.js" "slummer.js") source-names)))
+          (append *site-wide-scripts* source-names)))
 
 ;; helper for use in defpage
 (defun make-styles (&optional source-names)
@@ -142,7 +159,7 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
             (list :tag :name "link"
                        :attrs `(list :rel "stylesheet" :type "text/css"
                                      :href (concatenate 'string *css-root* ,s))))
-          source-names))
+          (append *site-wide-styles* source-names))
 
 
 (defmacro defpage (path (&key (title "Slumming It") styles scripts)  &body body)
@@ -157,8 +174,6 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
        (:body
         (:div ,@body)
         ,@(make-scripts scripts))))))
-
-
 
 (defmacro defscript (name &body body)
   `(add-to-site (concatenate 'string *js-root* "/" ,name)
@@ -182,7 +197,8 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
 
 (defun make-target-filname (filepath)
   "Isolates filename from FILEPATH and does two things: (1) Changes extensions
-   .paren to .js and .lass to .css; (2) Prepends file type specific prefix to the name"
+   .paren to .js and .lass to .css; (2) Prepends file type specific prefix to
+   the name. I.e. *JS-ROOT* for .js, *MEDIA-ROOT* for media files, etc."
   (let ((ext (string-downcase (pathname-type filepath)))
         (filename (pathname-name filepath)))
     (cond ((member ext '("js" "paren") :test #'equal)
@@ -192,7 +208,6 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
           ((member ext '("html" "htm") :test #'equal)
            (concatenate 'string *site-root* "/" filename "." ext))
           (t (concatenate 'string *media-root* filename "." ext)))))
-
 
 
 (defun include (filename &optional target)
@@ -221,7 +236,6 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
                (ensure-directories-exist (directory-namestring filename))
                (build-content filename content)))))
 
-               ;(alexandria:write-string-into-file content filename :if-exists :supersede)))))
 
 (defun build-content (target-path content)
   (if (stringp content)
