@@ -112,8 +112,8 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
 (defvar *site-data*) ; YOU MUST PROVIDN BINDINGS FOR THIS BEFORE CALLING ANY OF
                                         ; THE DEF-THING FUNCTIONS
 
-(defvar *site-wide-scripts* NIL)
-(defvar *site-wide-styles* NIL)
+(defvar *site-wide-scripts* '())
+(defvar *site-wide-styles* '())
 
 
 (defmacro with-site-context ((&key site root js css media) &body body)
@@ -159,7 +159,8 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
             (list :tag :name "link"
                        :attrs `(list :rel "stylesheet" :type "text/css"
                                      :href (concatenate 'string *css-root* ,s))))
-          (append *site-wide-styles* source-names))
+          (append *site-wide-styles* source-names)))
+
 
 
 (defmacro defpage (path (&key (title "Slumming It") styles scripts)  &body body)
@@ -179,6 +180,9 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
   `(add-to-site (concatenate 'string *js-root* "/" ,name)
                 (ps:ps ,@body)))
 
+(defmacro defstyle (name &body body)
+  `(add-to-site (concatenate 'string *css-root* "/" ,name)
+                (lass:compile-and-write ,@body)))
 
 ;; helper to change a filename's extension, used for changing parenscript names to js names.
 (defun change-filename-ext (name ext)
@@ -249,4 +253,6 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
             target-path))
           (:lass (error "not yet implemented"))
           (:spinneret (error "not yet implemented"))))))
+
+
 

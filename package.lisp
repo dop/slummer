@@ -24,10 +24,15 @@
    #:defview
 
    ;; making sites & pages
-   #:*js-root*
-   #:*css-root*
-   #:*resource-root*
+   #:with-site-context
+   #:with-styles
+   #:with-scripts
+   #:with-scripts-and-styles
+   #:fresh-site
    #:defpage
-   #:with-site
+   #:defscript
+   #:defstyle
+   #:include
+   #:build-site
    ))
 
