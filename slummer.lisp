@@ -97,45 +97,52 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
 ;;; Spinneret Macros & Functions
 
 (defvar *js-root* ""
-  "This special variable designates a URL root prepended to javascript file
+  "This special variable designates a URI root prepended to javascript file
   names passed to DEFPAGE.")
 
 (defvar *css-root* ""
-  "This special variable designates a URL root prepended to stylsheet file names
+  "This special variable designates a URI root prepended to stylsheet file names
   that are passed to DEFPAGE")
 
-(defvar *resource-root* "/" )
+(defvar *media-root* ""
+  "Special variable to control where included media should be deposited.")
 
-(defvar *site-data* '())
+(defvar *site-root* "")
 
-(defvar *site-file-root* ""
-  "The root directory, from the perspective of the browser, used in generating URLs.")
+(defvar *site-data*) ; YOU MUST PROVIDN BINDINGS FOR THIS BEFORE CALLING ANY OF
+                                        ; THE DEF-THING FUNCTIONS
 
-(defvar *source-root* ""
-  "The root directory, relative to to current working directory, where project code is located")
+(defmacro with-site-context ((&key site root js css media) &body body)
+  `(let ((*site-data (if ,site ,site *site-data*))
+         (*site-root* (if ,site ,site *site-root*)) ;; basicaly just used to include html?
+         (*js-root* (if ,js ,js *js-root*))
+         (*css-root* (if ,css ,css *css-root*))
+         (*media-root* (if ,media ,media *media-root*)))
+     (progn ,@body)
+     *site-data*))
 
+(defun fresh-site ()
+  "Creates a fresh site data object"
+  (list))
 
+(defun add-to-site (path thing)
+  "Adds THING to the site stored in *SITE-DATA*, associating the PATH with that THING."
+  (push (cons name thing) *site-data*))
+
+;; helper for use in defpage
 (defun make-scripts (&optional source-names)
   (mapcar (lambda (s)
             (list :tag :name "script"
                        :attrs `(list :src (concatenate 'string *js-root* ,s))))
           (append '("ps-prelude.js" "slummer.js") source-names)))
 
-
-
+;; helper for use in defpage
 (defun make-styles (&optional source-names)
   (mapcar (lambda (s)
             (list :tag :name "link"
                        :attrs `(list :rel "stylesheet" :type "text/css"
                                      :href (concatenate 'string *css-root* ,s))))
           source-names))
-
-
-(defun make-resource (path)
-  (concatenate 'string *resource-root* resource))
-
-(defun add-to-site (name thing)
-  (push (cons name thing) *site-data*))
 
 
 (defmacro defpage (path (&key (title "Slumming It") styles scripts)  &body body)
@@ -153,15 +160,12 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
 
 
 
-(defmacro define-site-in-context ((&key js css resource) &body body)
-  `(let ((*site-data* nil)
-         (*js-root* (if ,js ,js *js-root*))
-         (*css-root* (if ,css ,css *css-root*))
-         (*resource-root* (if ,resource ,resource *resource-root*)))
-     (progn ,@body)
-     *site-data*))
+(defmacro defscript (name &body body)
+  `(add-to-site (concatenate 'string *js-root* "/" ,name)
+                (ps:ps ,@body)))
 
 
+;; helper to change a filename's extension, used for changing parenscript names to js names.
 (defun change-filename-ext (name ext)
   (cl-strings:join
    (reverse
@@ -170,50 +174,65 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
            (reverse (cl-strings:split name ".")))))
    :separator "."))
 
+(defun include-file-type (filename)
+  (let ((ext (string-downcase (pathname-type filename))))
+    (cond ((equal ext "paren")  :PARENSCRIPT)
+          ((equal ext "lass" ) :LASS)
+          (t :COPY))))
 
-(defun include-script (name)
-  (cond ((cl-strings:ends-with name ".js")
-         (add-to-site  name (alexandria:read-file-into-string name)))
-
-        ((cl-strings:ends-with ".paren")
-         (add-to-site (change-filename-ext name "js")
-                      (ps:ps-compile-file name)))
-        (t
-         (error "~s is neither a Javascript nor Parenscript file." name ))))
-
-
-(defmacro defscript (name &body body)
-  `(add-to-site ,name
-                (ps:ps ,@body)))
-
-(defun include-style (name)
-  (cond ((cl-strings:ends-with ".css")
-         (add-to-site name (alexandria:read-file-into-string name)))
-        ((cl-strings:ends-with ".lass")
-         (error "Inclusion of .lass files not yet implemented"))
-        (t
-         (error "~s is neither a CSS nor LASS file." name))))
-
-;; TODO
-;; defmacro defstyle
-
-(defun include-page (name)
-  (cond ((cl-strings:ends-with ".html")
-         (add-to-site name (alexandria:read-file-into-string name)))
-        ((cl-strings:ends-with ".lisp")
-         (cl-add-to-site
-          (change-fielname-ext name "html")
-          (eval `(spinneret:with-html-string
-                   ,(read-from-string
-                     (alexandria:read-file-into-string name))))))
-        (t
-         (error "~s is neither an HTML nor LISP file." name))))
+(defun make-target-filname (filepath)
+  "Isolates filename from FILEPATH and does two things: (1) Changes extensions
+   .paren to .js and .lass to .css; (2) Prepends file type specific prefix to the name"
+  (let ((ext (string-downcase (pathname-type filepath)))
+        (filename (pathname-name filepath)))
+    (cond ((member ext '("js" "paren") :test #'equal)
+           (concatenate 'string *js-root* "/" filename ".js"))
+          ((member ext '("css" "lass") :test #'equal)
+           (concatenate 'string *css-root* "/" filename ".css"))
+          ((member ext '("html" "htm") :test #'equal)
+           (concatenate 'string *site-root* "/" filename "." ext))
+          (t (concatenate 'string *media-root* filename "." ext)))))
 
 
-(defun build-site (site-data)
+
+(defun include (filename &optional target)
+  (add-to-site (if target target (make-target-filename filename))
+               (cons (include-file-type filename) filename)))
+
+;; *SITE-DATA* is a list of (PATH . CONTENT) pairs. PATH is where CONTENT will,
+;; after having been interpreted, end up being written, relative to TARGET.
+;; CONTENT can be any one of:
+;; 1. A string
+;; 2. A pair (FILE-TYPE . PATH) where PATH is realtive to
+;;    the directory in which BUILD-SITE. FILE-TYPE is one of
+;;    - :COPY
+;;    - :PARENSCRIPT
+;;    - :LASS
+;;    - :SPINNERET
+;;
+;; For all file types except :COPY, the file will first be read into lisp in the
+;; current environment, and, using the appropriate library, will be compiled to
+;; a string which is then written to disk.
+
+(defun build-site (site-data &optional (target "build/"))
   (loop for (path . content) in site-data
         do (progn
-             (let ((filename (concatenate 'string "build/" path)))
+             (let ((filename (concatenate 'string target path)))
                (ensure-directories-exist (directory-namestring filename))
-               (alexandria:write-string-into-file content filename :if-exists :supersede)))))
+               (build-content filename content)))))
+
+               ;(alexandria:write-string-into-file content filename :if-exists :supersede)))))
+
+(defun build-content (target-path content)
+  (if (stringp content)
+      (alexandria:write-string-into-file content target-path :if-exists :supersede)
+      (destructuring-bind (file-type . source-path) content
+        (case file-type
+          (:copy (cl-fad:copy-file source-path target-path :overwrite t))
+          (:parenscript
+           (alexandria:write-string-into-file
+            (ps:ps-compile-file source-path)
+            target-path))
+          (:lass (error "not yet implemented"))
+          (:spinneret (error "not yet implemented"))))))
 
