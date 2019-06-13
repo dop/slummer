@@ -26,9 +26,6 @@
 
    ;; making sites & pages
    #:with-site-context
-   #:with-styles
-   #:with-scripts
-   #:with-scripts-and-styles
    #:fresh-site
    #:defpage
    #:defscript

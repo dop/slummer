@@ -127,18 +127,6 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
      (add-js-preludes-to-site ,site)
      slummer::*site-data*))
 
-(defmacro with-styles (file-list &body body)
-  `(let ((*site-wide-styles* ',file-list))
-     ,@body))
-
-(defmacro with-scripts (file-list &body body)
-  `(let ((*site-wide-scripts* ',file-list))
-     ,@body))
-
-(defmacro with-scripts-and-styles ((scripts styles) &body body)
-  `(let ((*site-wide-scripts* ',scripts)
-         (*site-wide-styles* ',styles))
-     ,@body))
 
 (defun fresh-site ()
   "Creates a fresh site data object"
@@ -172,7 +160,7 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
             (list :tag :name "link"
                        :attrs `(list :rel "stylesheet" :type "text/css"
                                      :href (concatenate 'string *css-root* ,s))))
-          (append *site-wide-styles* source-names)))
+          (append slummer::*site-wide-styles* source-names)))
 
 
 (defmacro defpage (path (&key (title "Slumming It") styles scripts)  &body body)
@@ -209,7 +197,7 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
   (let ((ext (string-downcase (pathname-type filename))))
     (cond ((equal ext "paren")  :parenscript)
           ((equal ext "lass" ) :lass)
-          (t :COPY))))
+          (t :copy))))
 
 (defun make-target-filename (filepath)
   "Isolates filename from FILEPATH and does two things: (1) Changes extensions
@@ -264,7 +252,8 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
           (:parenscript
            (alexandria:write-string-into-file
             (ps:ps-compile-file source-path)
-            target-path))
+            target-path
+            :if-exists :supersede))
           (:lass
            (lass:generate source-path :out target-path :pretty t))
           (:spinneret (error "not yet implemented"))))))
