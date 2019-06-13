@@ -258,3 +258,10 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
            (lass:generate source-path :out target-path :pretty t))
           (:spinneret (error "not yet implemented"))))))
 
+;;; slum-it
+
+(defun slum-it ()
+  (let ((args sb-ext:*posix-argv*))
+    (if (= 2 (length args))
+        (load (second args))
+        (format t "USAGE: slummer <site-def.lisp>~%"))))
