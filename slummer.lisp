@@ -116,14 +116,14 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
 (defvar *site-wide-styles* '())
 
 
-(defmacro with-site-context ((&key site root js css media) &body body)
-  `(let ((*site-data (if ,site ,site *site-data*))
-         (*site-root* (if ,site ,site *site-root*)) ;; basicaly just used to include html?
-         (*js-root* (if ,js ,js *js-root*))
-         (*css-root* (if ,css ,css *css-root*))
-         (*media-root* (if ,media ,media *media-root*)))
+(defmacro with-site-context ((site &key root js css media) &body body)
+  `(let ((slummer::*site-data* ,site)
+         (slummer::*site-root* (if ,root ,root slummer::*site-root*)) 
+         (slummer::*js-root* (if ,js ,js slummer::*js-root*))
+         (slummer::*css-root* (if ,css ,css slummer::*css-root*))
+         (slummer::*media-root* (if ,media ,media slummer::*media-root*)))
      (progn ,@body)
-     *site-data*))
+     slummer::*site-data*))
 
 (defmacro with-styles (file-list &body body)
   `(let ((*site-wide-styles* ',file-list))
@@ -140,11 +140,11 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
 
 (defun fresh-site ()
   "Creates a fresh site data object"
-  (list))
+  (list :site))
 
 (defun add-to-site (path thing)
   "Adds THING to the site stored in *SITE-DATA*, associating the PATH with that THING."
-  (push (cons name thing) *site-data*))
+  (push (cons path thing) (cdr *site-data*)))
 
 ;; helper for use in defpage
 (defun make-scripts (&optional source-names)
@@ -176,12 +176,12 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
         (:div ,@body)
         ,@(make-scripts scripts))))))
 
-(defmacro defscript (name &body body)
-  `(add-to-site (concatenate 'string *js-root* "/" ,name)
+(defmacro defscript (script-name &body body)
+  `(add-to-site (concatenate 'string *js-root* "/" ,script-name)
                 (ps:ps ,@body)))
 
-(defmacro defstyle (name &body body)
-  `(add-to-site (concatenate 'string *css-root* "/" ,name)
+(defmacro defstyle (style-name &body body)
+  `(add-to-site (concatenate 'string *css-root* "/" ,style-name)
                 (lass:compile-and-write ,@body)))
 
 ;; helper to change a filename's extension, used for changing parenscript names to js names.
@@ -234,9 +234,10 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
 ;; a string which is then written to disk.
 
 (defun build-site (site-data &optional (target "build/"))
-  (loop for (path . content) in site-data
+  (loop for (path . content) in (cdr site-data)
         do (progn
              (let ((filename (concatenate 'string target path)))
+               (format t "about to build ~s~%" filename)
                (ensure-directories-exist (directory-namestring filename))
                (build-content filename content)))))
 
@@ -251,8 +252,7 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
            (alexandria:write-string-into-file
             (ps:ps-compile-file source-path)
             target-path))
-          (:lass (error "not yet implemented"))
+          (:lass
+           (lass:generate source-path :out target-path :prety t))
           (:spinneret (error "not yet implemented"))))))
-
-
 
