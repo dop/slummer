@@ -112,7 +112,7 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
 (defvar *site-data*) ; YOU MUST PROVIDN BINDINGS FOR THIS BEFORE CALLING ANY OF
                                         ; THE DEF-THING FUNCTIONS
 
-(defvar *site-wide-scripts* '())
+(defvar *site-wide-scripts* '("psprelude.js" "slummer.js"))
 (defvar *site-wide-styles* '())
 
 
@@ -123,6 +123,8 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
          (slummer::*css-root* (if ,css ,css slummer::*css-root*))
          (slummer::*media-root* (if ,media ,media slummer::*media-root*)))
      (progn ,@body)
+     ;; add js preludes to site
+     (add-js-preludes-to-site ,site)
      slummer::*site-data*))
 
 (defmacro with-styles (file-list &body body)
@@ -144,7 +146,18 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
 
 (defun add-to-site (path thing)
   "Adds THING to the site stored in *SITE-DATA*, associating the PATH with that THING."
-  (push (cons path thing) (cdr *site-data*)))
+  (if (assoc path (cdr *site-data*) :test #'equal)
+      (format t "WARNING: Already added ~s to site. Skippping." path)
+      (push (cons path thing) (cdr *site-data*))))
+
+(defun add-js-preludes-to-site (site)
+  "Adds slummer.js and psprelude.js to the *SITE-DATA*"
+  (let ((*site-data* site))
+    (add-to-site (concatenate 'string *js-root* "psprelude.js")
+                 (ps:ps* ps:*ps-lisp-library*))
+    (add-to-site (concatenate 'string *js-root* "slummer.js")
+                 (ps:ps* *slummer-ps-lib*))))
+
 
 ;; helper for use in defpage
 (defun make-scripts (&optional source-names)
@@ -160,7 +173,6 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
                        :attrs `(list :rel "stylesheet" :type "text/css"
                                      :href (concatenate 'string *css-root* ,s))))
           (append *site-wide-styles* source-names)))
-
 
 
 (defmacro defpage (path (&key (title "Slumming It") styles scripts)  &body body)
@@ -218,6 +230,7 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
   (add-to-site (if target target (make-target-filename filename))
                (cons (include-file-type filename) filename)))
 
+
 ;; *SITE-DATA* is a list of (PATH . CONTENT) pairs. PATH is where CONTENT will,
 ;; after having been interpreted, end up being written, relative to TARGET.
 ;; CONTENT can be any one of:
@@ -234,10 +247,11 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
 ;; a string which is then written to disk.
 
 (defun build-site (site-data &optional (target "build/"))
+
+
   (loop for (path . content) in (cdr site-data)
         do (progn
              (let ((filename (concatenate 'string target path)))
-               (format t "about to build ~s~%" filename)
                (ensure-directories-exist (directory-namestring filename))
                (build-content filename content)))))
 
