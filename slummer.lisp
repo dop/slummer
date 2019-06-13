@@ -207,22 +207,22 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
 
 (defun include-file-type (filename)
   (let ((ext (string-downcase (pathname-type filename))))
-    (cond ((equal ext "paren")  :PARENSCRIPT)
-          ((equal ext "lass" ) :LASS)
+    (cond ((equal ext "paren")  :parenscript)
+          ((equal ext "lass" ) :lass)
           (t :COPY))))
 
-(defun make-target-filname (filepath)
+(defun make-target-filename (filepath)
   "Isolates filename from FILEPATH and does two things: (1) Changes extensions
    .paren to .js and .lass to .css; (2) Prepends file type specific prefix to
    the name. I.e. *JS-ROOT* for .js, *MEDIA-ROOT* for media files, etc."
   (let ((ext (string-downcase (pathname-type filepath)))
         (filename (pathname-name filepath)))
     (cond ((member ext '("js" "paren") :test #'equal)
-           (concatenate 'string *js-root* "/" filename ".js"))
+           (concatenate 'string *js-root* filename ".js"))
           ((member ext '("css" "lass") :test #'equal)
-           (concatenate 'string *css-root* "/" filename ".css"))
+           (concatenate 'string *css-root* filename ".css"))
           ((member ext '("html" "htm") :test #'equal)
-           (concatenate 'string *site-root* "/" filename "." ext))
+           (concatenate 'string *site-root* filename "." ext))
           (t (concatenate 'string *media-root* filename "." ext)))))
 
 
@@ -247,8 +247,6 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
 ;; a string which is then written to disk.
 
 (defun build-site (site-data &optional (target "build/"))
-
-
   (loop for (path . content) in (cdr site-data)
         do (progn
              (let ((filename (concatenate 'string target path)))
@@ -260,6 +258,7 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
   (if (stringp content)
       (alexandria:write-string-into-file content target-path :if-exists :supersede)
       (destructuring-bind (file-type . source-path) content
+        (print content)
         (case file-type
           (:copy (cl-fad:copy-file source-path target-path :overwrite t))
           (:parenscript
@@ -267,6 +266,6 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
             (ps:ps-compile-file source-path)
             target-path))
           (:lass
-           (lass:generate source-path :out target-path :prety t))
+           (lass:generate source-path :out target-path :pretty t))
           (:spinneret (error "not yet implemented"))))))
 
