@@ -246,7 +246,7 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
   (if (stringp content)
       (alexandria:write-string-into-file content target-path :if-exists :supersede)
       (destructuring-bind (file-type . source-path) content
-        (print content)
+
         (case file-type
           (:copy (cl-fad:copy-file source-path target-path :overwrite t))
           (:parenscript
@@ -261,7 +261,49 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
 ;;; slum-it
 
 (defun slum-it ()
-  (let ((args sb-ext:*posix-argv*))
-    (if (= 2 (length args))
-        (load (second args))
-        (format t "USAGE: slummer <site-def.lisp>~%"))))
+  (let* ((args sb-ext:*posix-argv*)
+         (arg-length (length args)))
+
+    (cond ((and (= 2 arg-length)
+                (equal "run" (string-downcase (second args))))
+           (slumit-run-site))
+
+          ((and (= 3 arg-length)
+                (equal "build" (string-downcase (second args))))
+           (slumit-build (third args)))
+
+          ((and (= 3 arg-length)
+                (equal "new" (string-downcase (second args))))
+           (slumit-new (third args)))
+
+          (t
+           (format t
+                   "USAGE: slummer build <entry.lisp>~%       slummer run~%       slummer new <name>~%~%")))))
+
+
+;; TODO make it so that the user doesn't have to call (build-site) from their file??
+(defun slumit-build (file)
+  (load file))
+
+
+;; TODO support arguments for which version to run - i.e. which build directory.
+;; Perhaps later, support more siginificant config/code for a dynamic site. But right
+;; now its all static.
+(defun slumit-run-site ()
+  (let ((server (hunchentoot:start
+                  (make-instance 'hunchentoot:easy-acceptor
+                                :port 5000))))
+    (setf (hunchentoot:acceptor-document-root server)
+          "build/")
+
+    (format t "~%Type 'quit' to quit~%")
+
+    (loop with command = (read-line)
+          do (when (equal "quit" (string-downcase command))
+               (hunchentoot:stop server)
+               (return-from slumit-run-site)))))
+
+
+;; TODO
+(defun slumit-new (name)
+  (format t "NOT YET IMPLEMENTED~%"))
