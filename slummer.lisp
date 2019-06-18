@@ -277,6 +277,7 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
            (slumit-new (third args)))
 
           (t
+           ;; TODO use idiomatic format
            (format t
                    "USAGE: slummer build <entry.lisp>~%       slummer run~%       slummer new <name>~%~%")))))
 
@@ -303,7 +304,36 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
                (hunchentoot:stop server)
                (return-from slumit-run-site)))))
 
+(defparameter +site-template+ "
+(defpackage #:~a
+  (:use #:cl #:slummer))
 
-;; TODO
-(defun slumit-new (name)
-  (format t "NOT YET IMPLEMENTED~%"))
+(in-package #:~a)
+
+;; variable holding the site
+(defvar *~a-site* (fresh-site))
+
+;; A site context section.
+;; You can add more if you want to define pages
+;; in different contexts.
+(with-site-context (*~a-site*) ; add context keywords if you need them
+  ;; your code here
+  )
+
+(build-site *~a-site*)
+")
+
+(defun slumit-new (path)
+
+  (let* ((path (if (cl-strings:ends-with path "/")
+                   path
+                   (concatenate 'string path "/")))
+         (name (cadr (reverse (cl-strings:split path "/")))))
+
+    (ensure-directories-exist path)
+    (with-open-file (out (concatenate 'string path "/" name ".lisp") :direction :output)
+      (format out +site-template+ name name name name name))))
+
+
+
+
