@@ -203,4 +203,31 @@ accepts a MAP-FN argument that should turn the members of LS into ELEMs"
     (+ "" arg))
 
   (export ->string))
+
+
+(defmodule (*slummer* *net*)
+  "Some networking tools."
+
+  (defun xhr (url on-load &key (method "GET") payload)
+    "Make an XHR request to URL calling ON-LOAD on the response. The default
+    METHOD is the string \"GET\", and the default PAYLOAD is NIL."
+    (let ((req (ps:new (-X-M-L-Http-Request))))
+      (@> req (add-event-listener "load" on-load))
+      (@> req (open method url))
+      (@> req (send payload))))
+
+  (defun ws (url on-message &key hello)
+    "Creates a new WebSocket connection to URL and attaches the ON-MESSAGE
+    handler to handle incoming messages. Optionally send the HELLO message on
+    opening the connection. The URL should look like ws:://addr[:PORT]/other-stuff"
+    (let ((con (ps:new (-web-socket url))))
+      (@> con (add-event-listener "message" on-message))
+      (when hello
+        (@> con (add-event-listener "open" (lambda () (@> con (send hello))))))
+      con))
+
+ (export xhr ws)) ; end defmodule slummer.net
+
+;; the following two lines close the top-level defvar
 ))
+
