@@ -260,6 +260,11 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
 
 ;;; slum-it
 
+(defparameter +commands+
+  (list "slummer build <lisp file>"
+        "slummer run"
+        "slummer new <name>"))
+
 (defun slum-it ()
   (let* ((args sb-ext:*posix-argv*)
          (arg-length (length args)))
@@ -277,9 +282,9 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
            (slumit-new (third args)))
 
           (t
-           ;; TODO use idiomatic format
-           (format t
-                   "USAGE: slummer build <entry.lisp>~%       slummer run~%       slummer new <name>~%~%")))))
+           (format t "USAGE: ~a~%" (car +commands+))
+           (format t "~{       ~a~%~}" (cdr +commands+))))))
+
 
 
 ;; TODO make it so that the user doesn't have to call (build-site) from their file??
