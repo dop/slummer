@@ -292,9 +292,6 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
   (load file))
 
 
-;; TODO support arguments for which version to run - i.e. which build directory.
-;; Perhaps later, support more siginificant config/code for a dynamic site. But right
-;; now its all static.
 (defun slumit-run-site ()
   (let ((server (hunchentoot:start
                   (make-instance 'hunchentoot:easy-acceptor
@@ -328,6 +325,11 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
 (build-site *~a-site*)
 ")
 
+
+(defun write-site-template (stream name)
+  (format out +site-template+ name name name name name))
+
+
 (defun slumit-new (path)
 
   (let* ((path (if (cl-strings:ends-with path "/")
@@ -337,7 +339,7 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
 
     (ensure-directories-exist path)
     (with-open-file (out (concatenate 'string path "/" name ".lisp") :direction :output)
-      (format out +site-template+ name name name name name))))
+      (write-site-template out name))))
 
 
 
