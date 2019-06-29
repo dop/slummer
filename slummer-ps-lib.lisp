@@ -106,7 +106,9 @@ node."
                        (getprop old-props prop)
                        (getprop new-props prop))))
 
+
   (defun update-elem (parent-node old-elem new-elem &optional (child-index 0))
+
     (let ((child-node (getprop parent-node 'child-nodes child-index)))
       (cond ((not old-elem)
              ;; if there is no old element we just append a new one
@@ -127,13 +129,15 @@ node."
                                 (@ old-elem properties)
                                 (@ new-elem properties))
              ;; then we recursively  update the child node's own children
-             (let ((new-length (@ new-elem children length))
-                   (old-length (@ old-elem children length)))
-               (dotimes (idx (max new-length old-length))
+             (let* ((new-length (@ new-elem children length))
+                    (old-length (@ old-elem children length))
+
+                    (max-len (max new-length old-length)))
+               (dotimes (idx max-len)
                  (update-elem child-node
-                              (getprop old-elem 'children idx)
-                              (getprop new-elem 'children idx)
-                              idx)))))))
+                              (getprop old-elem 'children (- max-len 1 idx))
+                              (getprop new-elem 'children (- max-len 1 idx))
+                              (- max-len 1 idx))))))))
 
   (export elem elem-prop elem-prop! update-elem)) ; end defmodule *slummer*
 
@@ -198,11 +202,16 @@ accepts a MAP-FN argument that should turn the members of LS into ELEMs"
 
 
 (defmodule (*slummer* *util*)
+ "utility library"
+ (defun ->string (arg)
+   (+ "" arg))
 
-  (defun ->string (arg)
-    (+ "" arg))
+ (defun cons (x xs)
+   "XS is assumed to be a javascript array"
+   (@> xs (unshift x))
+   xs)
 
-  (export ->string))
+  (export ->string cons))
 
 
 (defmodule (*slummer* *json*)
