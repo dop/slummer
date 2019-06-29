@@ -23,6 +23,7 @@
    #:defapp
    #:defactive
    #:defview
+   #:defroute
 
    ;; making sites & pages
    #:with-site-context

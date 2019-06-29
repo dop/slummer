@@ -28,7 +28,7 @@
 body of your definition you must (SETF *VIEW* <something>) in order for your
 app to work properly."
   `(defun ,name (attachment)
-     (let* ((*state* nil)
+     (let* ((*routes* nil)
             (*view* nil)
             (*virutal* nil)
             (*attachment* (if (stringp attachment)
@@ -39,6 +39,15 @@ app to work properly."
                           (chain *slummer* (update-elem *attachment* *virtual* new-virtual))
                           (setf *virtual* new-virtual)))))
        (progn ,@setup)
+
+       (defactive on-hash-change ()
+         (let ((hash-handler (getprop *routes* (@> window location hash))))
+           ;; return early if there is no handler for this route
+           (if hash-handler (hash-handler) (return nil))))
+
+       ;; only add the handler when routes actually exist.
+       (when *routes*
+         (@> window (add-event-listener "hashchange" on-hash-change)))
        (setf *virtual* (*view*))
        (chain *slummer* (update-elem *attachment* nil *virtual*)))))
 
@@ -48,6 +57,11 @@ after having been called, will re-render the DOM."
   `(defun ,name ,lambda-list
      (progn ,@body)
      (*render*)))
+
+(defpsmacro defroute (hash &rest body)
+  "A macro that pushes a new route handler into this app's *routes*."
+  `(progn (when (not *routes*) (setf *routes* ({})))
+          (setf (@> *routes* ,hash) (lambda () ,@body))))
 
 (defpsmacro defview (name view-form)
   "Defines a thunk that returns a virtual DOM element."
