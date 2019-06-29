@@ -321,16 +321,42 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
 (with-site-context (*~a-site*) ; add context keywords if you need them
   ;; your code here
   (defpage \"index.html\" ()
-    (:h1 \"Hello, Ya Bum.\"))
+    (:h1 \"Hello, Ya Bum.\")
+    (:div :id \"~a-app\" ))
   )
 
 (build-site *~a-site*)
 ")
 
+(defparameter +app-template+ "
+(defmodule ~a
+
+  ;;; IMPORTS
+  ;; (import-from (*slummer* *html*) h1 h2 h3 div header section p footer ul li a button)
+
+  ;;; MODULE LEVEL STATE
+
+  ;;; DEFUALT APP
+  (defapp ~a-app
+
+    (defview main-view
+      
+      (div () \"hey\"))
+
+    ;; you have to set your top-level view to *view*, a hidden private variable
+    ;; in this app
+    (setf *view* main-view)
+  )
+  (@> window (add-event-listener \"load\" (lambda () (~a-app \"~a-app\"))))
+  )
+")
+
 
 (defun write-site-template (stream name)
-  (format stream +site-template+ name name name name name))
+  (format stream +site-template+ name name name name name name))
 
+(defun write-app-template (stream name)
+  (format stream +app-template+ name name name name))
 
 (defun slumit-new (path)
 
@@ -341,7 +367,9 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
 
     (ensure-directories-exist path)
     (with-open-file (out (concatenate 'string path "/main.lisp") :direction :output)
-      (write-site-template out name))))
+      (write-site-template out name))
+    (with-open-file (out (concatenate 'string path "/app.paren") :direction :output)
+      (write-app-template out name))))
 
 
 
