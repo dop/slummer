@@ -319,8 +319,10 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
 ;; You can add more if you want to define pages
 ;; in different contexts.
 (with-site-context (*~a-site*) ; add context keywords if you need them
-  ;; your code here
-  (defpage \"index.html\" ()
+
+  (include \"app.paren\")
+
+  (defpage \"index.html\" (:scripts (\"app.js\"))
     (:h1 \"Hello, Ya Bum.\")
     (:div :id \"~a-app\" ))
   )
@@ -332,16 +334,22 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
 (defmodule ~a
 
   ;;; IMPORTS
-  ;; (import-from (*slummer* *html*) h1 h2 h3 div header section p footer ul li a button)
+  (import-from (*slummer* *html*) h1 p div button)
 
   ;;; MODULE LEVEL STATE
 
   ;;; DEFUALT APP
   (defapp ~a-app
 
+    (defvar *click-count* 0)
+
+    (defactive count-click (event)
+      (incf *click-count*))
+
     (defview main-view
-      
-      (div () \"hey\"))
+      (div ()
+        (p () *click-count*)
+        (button ({} :onclick count-click) \"click me\")))
 
     ;; you have to set your top-level view to *view*, a hidden private variable
     ;; in this app
