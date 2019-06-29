@@ -261,7 +261,7 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
 ;;; slum-it
 
 (defparameter +commands+
-  (list "slummer build <lisp file>"
+  (list "slummer build"
         "slummer run"
         "slummer new <name>"))
 
@@ -273,9 +273,9 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
                 (equal "run" (string-downcase (second args))))
            (slumit-run-site))
 
-          ((and (= 3 arg-length)
+          ((and (= 2 arg-length)
                 (equal "build" (string-downcase (second args))))
-           (slumit-build (third args)))
+           (slumit-build "main.lisp"))
 
           ((and (= 3 arg-length)
                 (equal "new" (string-downcase (second args))))
@@ -320,6 +320,8 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
 ;; in different contexts.
 (with-site-context (*~a-site*) ; add context keywords if you need them
   ;; your code here
+  (defpage \"index.html\" ()
+    (:h1 \"Hello, Ya Bum.\"))
   )
 
 (build-site *~a-site*)
@@ -327,7 +329,7 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
 
 
 (defun write-site-template (stream name)
-  (format out +site-template+ name name name name name))
+  (format stream +site-template+ name name name name name))
 
 
 (defun slumit-new (path)
@@ -338,7 +340,7 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
          (name (cadr (reverse (cl-strings:split path "/")))))
 
     (ensure-directories-exist path)
-    (with-open-file (out (concatenate 'string path "/" name ".lisp") :direction :output)
+    (with-open-file (out (concatenate 'string path "/main.lisp") :direction :output)
       (write-site-template out name))))
 
 
