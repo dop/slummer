@@ -22,50 +22,38 @@
         (elem ,(string-downcase (symbol-name (car names))) props children))
       (defelems ,@(cdr names)))))
 
+(defpsmacro defstate (name &optional (value (list 'ps:create)))
+  `(defvar ,name
+     ((lambda ()
+        (let ((view-registry (ps:[])))
+          (ps:new
+           (-Proxy ,value
+                   (ps:create
+                    get (lambda (obj prop)
+                          (if (equal prop "__registry") view-registry
+                              (ps:getprop obj prop)))
+                    set (lambda (obj prop newval)
+                          (if (equal prop "__registry")
+                              (progn
+                                (setf (getprop view-registry prop) newval)
+                                true)
+                              (progn
+                                (setf (getprop obj prop) newval)
+                                (dolist (view view-registry)
+                                  (@> *slummer* (render-view view)))
+                                true)))))))))))
 
-(defpsmacro defapp (name &rest setup)
-  "Define an application, returns a function that accepts a DOM node. In the
-body of your definition you must (SETF *VIEW* <something>) in order for your
-app to work properly."
-  `(defun ,name (attachment)
-     (let* ((*routes* nil)
-            (*view* nil)
-            (*virutal* nil)
-            (*attachment* (if (stringp attachment)
-                              (@> document (get-element-by-id attachment))
-                              attachment))
-            (*render* (lambda ()
-                        (let ((new-virtual (*view*)))
-                          (chain *slummer* (update-elem *attachment* *virtual* new-virtual))
-                          (setf *virtual* new-virtual)))))
-       (progn ,@setup)
+(defpsmacro defview (name &key attachment states render)
+  `(progn
+     (defvar ,name
+       (ps:create virtual nil
+                  attachment (if (stringp ,attachment)
+                                 (@> document (get-element-by-id ,attachment))
+                                 ,attachment)
+                  render (lambda () ,render)))
+     (dolist (state-var ,states)
+       (@> state-var "__registry" (push ,name)))))
 
-       (defactive on-hash-change ()
-         (let ((hash-handler (getprop *routes* (@> window location hash))))
-           ;; return early if there is no handler for this route
-           (if hash-handler (hash-handler) (return nil))))
-
-       ;; only add the handler when routes actually exist.
-       (when *routes*
-         (@> window (add-event-listener "hashchange" on-hash-change)))
-       (setf *virtual* (*view*))
-       (chain *slummer* (update-elem *attachment* nil *virtual*)))))
-
-(defpsmacro defactive (name lambda-list &rest body)
-  "A macro to be called within the body of a DEFAPP. Creates a function that,
-after having been called, will re-render the DOM."
-  `(defun ,name ,lambda-list
-     (progn ,@body)
-     (*render*)))
-
-(defpsmacro defroute (hash &rest body)
-  "A macro that pushes a new route handler into this app's *routes*."
-  `(progn (when (not *routes*) (setf *routes* ({})))
-          (setf (@> *routes* ,hash) (lambda () ,@body))))
-
-(defpsmacro defview (name view-form)
-  "Defines a thunk that returns a virtual DOM element."
-  `(defun ,name () ,view-form))
 
 (defpsmacro defmodule (name &rest body)
   "Defines a unit of code, meant to encapsulate hidden state and functions. NAME
@@ -301,7 +289,6 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
 
 
 
-;; TODO make it so that the user doesn't have to call (build-site) from their file??
 (defun slumit-build (file)
   (load file))
 
@@ -352,24 +339,20 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
 
   ;;; MODULE LEVEL STATE
 
-  ;;; DEFUALT APP
-  (defapp ~a-app
+  (defstate *state* ({} count 0))
 
-    (defvar *click-count* 0)
+  (defun inc-clicks ()
+    (incf (@> *state* count)))
 
-    (defactive count-click (event)
-      (incf *click-count*))
+  (defview main-view
+    :states (ps:[] *state*)
+    :render (div ()
+                 (p () (@> *state* count))
+                 (button ({} :onclick inc-clicks) \"click me\")))
 
-    (defview main-view
-      (div ()
-        (p () *click-count*)
-        (button ({} :onclick count-click) \"click me\")))
-
-    ;; you have to set your top-level view to *view*, a hidden private variable
-    ;; in this app
-    (setf *view* main-view)
-  )
-  (@> window (add-event-listener \"load\" (lambda () (~a-app \"~a-app\"))))
+  (@> window (add-event-listener \"load\"
+                                 (lambda ()
+                                   (@> *slummer* (attach-view main-view \"~a-app\")))))
   )
 ")
 
@@ -378,7 +361,7 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
   (format stream +site-template+ name name name name name name))
 
 (defun write-app-template (stream name)
-  (format stream +app-template+ name name name name))
+  (format stream +app-template+ name name))
 
 (defun slumit-new (path)
 

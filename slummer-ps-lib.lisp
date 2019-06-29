@@ -139,7 +139,20 @@ node."
                               (getprop new-elem 'children (- max-len 1 idx))
                               (- max-len 1 idx))))))))
 
-  (export elem elem-prop elem-prop! update-elem)) ; end defmodule *slummer*
+ (defun attach-view (view attachment)
+   (setf (@> view attachment)
+         (if (stringp attachment)
+             (@> document (get-element-by-id attachment))
+             attachment))
+   (render-view view))
+
+ (defun render-view (view)
+   (let ((new-virtual (@> view (render))))
+     (update-elem (@> view attachment) (@> view virtual) new-virtual)
+     (setf (@> view virtual) new-virtual)))
+
+
+  (export elem elem-prop elem-prop! update-elem render-view attach-view)) ; end defmodule *slummer*
 
 
 

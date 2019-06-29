@@ -20,10 +20,8 @@
    #:import-from
 
    ;; reactive making applications
-   #:defapp
-   #:defactive
    #:defview
-   #:defroute
+   #:defstate
 
    ;; making sites & pages
    #:with-site-context
