@@ -22,6 +22,24 @@
         (elem ,(string-downcase (symbol-name (car names))) props children))
       (defelems ,@(cdr names)))))
 
+(defun parse-route-template (template)
+  (assert (equal #\# (elt template 0)))
+  (let ((parts (cl-strings:split template #\/)))
+    (cons (car parts) (mapcar #'read-from-string (cdr parts)))))
+
+(defmacro+ps defroute (template &body body)
+  (let* ((parsed (parse-route-template template))
+         (fname (gensym (format nil "~a-route" (car parsed)))))
+    `(progn
+       (defun ,fname ,(cdr parsed) ,@body)
+       (@> window
+           (add-event-listener
+            "hashchange"
+            (lambda ()
+              (let ((parts (@> window location hash (split "/"))))
+                (when (equal (ps:@ parts 0) ,(car parsed))
+                  (apply ,fname (@> parts (slice 1)))))))))))
+
 (defpsmacro defstate (name &optional (value (list 'ps:create)))
   `(defvar ,name
      ((lambda ()

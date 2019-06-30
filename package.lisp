@@ -22,6 +22,7 @@
    ;; reactive making applications
    #:defview
    #:defstate
+   #:defroute
 
    ;; making sites & pages
    #:with-site-context
