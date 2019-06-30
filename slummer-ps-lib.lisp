@@ -23,9 +23,6 @@
 field of EL."
     (getprop el 'properties prop))
 
-  (defun elem-prop! (el prop val)
-    (setf (getprop el 'properties prop) val))
-
   (defun elems-diff? (el1 el2)
   "Returns T if EL1 and EL2 are different enough to require re-rendering."
     (or (not (equal (typeof el1) (typeof el2)))
@@ -139,6 +136,9 @@ node."
                               (getprop new-elem 'children (- max-len 1 idx))
                               (- max-len 1 idx))))))))
 
+ (defun on (ob evt handler)
+   (@> ob (add-event-listener evt handler)))
+
  (defun attach-view (view attachment)
    (setf (@> view attachment)
          (if (stringp attachment)
@@ -152,7 +152,7 @@ node."
      (setf (@> view virtual) new-virtual)))
 
 
-  (export elem elem-prop elem-prop! update-elem render-view attach-view)) ; end defmodule *slummer*
+  (export elem elem-prop render-view attach-view on)) ; end defmodule *slummer*
 
 
 
@@ -224,7 +224,10 @@ accepts a MAP-FN argument that should turn the members of LS into ELEMs"
    (@> xs (unshift x))
    xs)
 
-  (export ->string cons))
+ (defun list (&rest args)
+   args)
+
+  (export ->string cons list))
 
 
 (defmodule (*slummer* *json*)

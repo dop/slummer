@@ -336,8 +336,10 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
 
   ;;; IMPORTS
   (import-from (*slummer* *html*) h1 p div button)
+  (import-from *slummer* attach-view on)
+  (import-from (*slummer* *util*) list)
 
-  ;;; MODULE LEVEL STATE
+  ;;; MODULE CODE
 
   (defstate *state* ({} count 0))
 
@@ -345,15 +347,14 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
     (incf (@> *state* count)))
 
   (defview main-view
-    :states (ps:[] *state*)
+    :states (list *state*)
     :render (div ()
                  (p () (@> *state* count))
                  (button ({} :onclick inc-clicks) \"click me\")))
 
-  (@> window (add-event-listener \"load\"
-                                 (lambda ()
-                                   (@> *slummer* (attach-view main-view \"~a-app\")))))
-  )
+  (on window \"load\"
+      (lambda ()
+        (attach-view main-view \"~a-app\"))))
 ")
 
 
