@@ -155,7 +155,7 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
 (defun add-to-site (path thing)
   "Adds THING to the site stored in *SITE-DATA*, associating the PATH with that THING."
   (if (assoc path (cdr *site-data*) :test #'equal)
-      (format t "WARNING: Already added ~s to site. Skippping." path)
+      (format t "WARNING: Already added ~s to site. Skippping.~%" path)
       (push (cons path thing) (cdr *site-data*))))
 
 (defun add-js-preludes-to-site (site)
@@ -339,13 +339,17 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
 
     (handler-case
         (loop do
-          (sleep 3)
+
           (handler-case
               (when (should-recompile watch-dict)
-                (format t "Rebuilding project ...~%")
+                (format t "Building project ...~%")
                 (slumit-build "main.lisp"))
             (error (c)
-              (format *error-output* "~%~%Caught error during rebuild:~% ~s~%~%" c))))
+              (format *error-output* "~%~%Caught error during rebuild:~% ~s~%~%" c)
+              (format t "Press Enter to continue when you think its ok~%")
+              (read-line)))
+
+          (sleep 1))
 
       (sb-sys:interactive-interrupt (c)
         (declare (ignore c))
@@ -363,7 +367,8 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
 (in-package #:~a)
 
 ;; variable holding the site
-(defvar *~a-site* (fresh-site))
+(defvar *~a-site*)
+(setf *~a-site* (fresh-site))
 
 ;; A site context section.
 ;; You can add more if you want to define pages
@@ -408,7 +413,7 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
 
 
 (defun write-site-template (stream name)
-  (format stream +site-template+ name name name name name name))
+  (format stream +site-template+ name name name name name name name))
 
 (defun write-app-template (stream name)
   (format stream +app-template+ name name))
