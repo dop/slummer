@@ -335,21 +335,22 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
     (setf (hunchentoot:acceptor-document-root server)
           "build/")
 
-    (format t "~% visit http://127.0.0.1:5000/index.html in your browser.~%")
+    (format t "~%Visit http://127.0.0.1:5000/index.html in your browser.~%")
+    (format t "Press Ctl-C to exit the test serer environment.~%")
 
     (handler-case
         (loop do
-
           (handler-case
-              (when (should-recompile watch-dict)
-                (format t "Building project ...~%")
-                (slumit-build "main.lisp"))
+              (progn
+                (when (should-recompile watch-dict)
+                  (format t "Building project ...~%")
+                  (slumit-build "main.lisp"))
+                (sleep 1))
             (error (c)
               (format *error-output* "~%~%Caught error during rebuild:~% ~s~%~%" c)
-              (format t "Press Enter to continue when you think its ok~%")
-              (read-line)))
-
-          (sleep 1))
+              (format t "Press Enter to continue when you think its ok...~%")
+              (read-line)
+              (format t "... Continuing!~%~%"))))
 
       (sb-sys:interactive-interrupt (c)
         (declare (ignore c))
