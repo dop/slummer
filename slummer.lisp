@@ -310,20 +310,51 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
 (defun slumit-build (file)
   (load file))
 
+(defun should-recompile (watch-dict)
+  (let ((changed nil))
+    (cl-fad:walk-directory
+     "."
+     (lambda (p)
+       (let ((name (namestring p)))
+         (when (or (search ".paren" name)
+                   (search ".lisp" name)
+                   (search ".lass" name))
+
+           (let ((current-md5 (md5:md5sum-file p))
+                 (stored-md5 (gethash p watch-dict)))
+             (when (not (equalp current-md5 stored-md5))
+               (setf (gethash p watch-dict) current-md5)
+               (setf changed t)))))))
+    changed))
 
 (defun slumit-run-site ()
   (let ((server (hunchentoot:start
-                  (make-instance 'hunchentoot:easy-acceptor
-                                :port 5000))))
+                 (make-instance 'hunchentoot:easy-acceptor
+                                :port 5000)))
+        (watch-dict (make-hash-table :test 'equalp)))
     (setf (hunchentoot:acceptor-document-root server)
           "build/")
 
-    (format t "~%Type 'quit' to quit~%")
+    (format t "~% visit http://127.0.0.1:5000/index.html in your browser.~%")
 
-    (loop with command = (read-line)
-          do (when (equal "quit" (string-downcase command))
-               (hunchentoot:stop server)
-               (return-from slumit-run-site)))))
+    (handler-case
+        (loop do
+          (sleep 3)
+          (handler-case
+              (when (should-recompile watch-dict)
+                (format t "Rebuilding project ...~%")
+                (slumit-build "main.lisp"))
+            (error (c)
+              (format *error-output* "~%~%Caught error during rebuild:~% ~s~%~%" c))))
+
+      (sb-sys:interactive-interrupt (c)
+        (declare (ignore c))
+        (format t "Exiting~%")
+        (hunchentoot:stop server)
+        (return-from slumit-run-site)))))
+
+
+
 
 (defparameter +site-template+ "
 (defpackage #:~a
