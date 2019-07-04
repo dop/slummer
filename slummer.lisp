@@ -389,8 +389,9 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
   (include \"app.paren\")
 
   (defpage \"index.html\" (:scripts (\"app.js\"))
-    (:h1 \"Hello, Ya Bum.\")
-    (:div :id \"~a-app\" ))
+    (:h1 \"Hello, Click Fiend.\")
+    (:div :id \"clicker-1\")
+    (:div :id \"clicker-2\" ))
   )
 
 (build-site *~a-site*)
@@ -406,10 +407,11 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
 
   ;;; MODULE CODE
 
-  (defstate *state* ({} count 0))
+  (defun make-counter-state ()
+    ({} count 0))
 
-  (defun inc-clicks ()
-    (incf (@> *state* count)))
+  (defstate first-counter (make-counter-state))
+  (defstate second-counter (make-counter-state))
 
   (defview main-view (state)
     ((inc-clicks () (incf (@> state count))))
@@ -419,15 +421,16 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
 
   (on window \"load\"
       (lambda ()
-        (main-view \"~a-app\" *state*))))
+        (main-view \"clicker-1\" first-counter)
+        (main-view \"clicker-2\" second-counter))))
 ")
 
 
 (defun write-site-template (stream name)
-  (format stream +site-template+ name name name name name name name))
+  (format stream +site-template+ name name name name name name))
 
 (defun write-app-template (stream name)
-  (format stream +app-template+ name name))
+  (format stream +app-template+ name))
 
 (defun slumit-new (path)
 
