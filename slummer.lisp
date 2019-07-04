@@ -310,21 +310,26 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
 (defun slumit-build (file)
   (load file))
 
+
+(defun compile-input-p (path)
+  (let ((name (file-namestring path)))
+    (and (not (equal #\. (elt name 0)))
+         (or (cl-strings:ends-with name ".paren")
+             (cl-strings:ends-with name ".lisp")
+             (cl-strings:ends-with name ".lass")))))
+
+
 (defun should-recompile (watch-dict)
   (let ((changed nil))
     (cl-fad:walk-directory
      "."
      (lambda (p)
-       (let ((name (namestring p)))
-         (when (or (search ".paren" name)
-                   (search ".lisp" name)
-                   (search ".lass" name))
-
-           (let ((current-md5 (md5:md5sum-file p))
-                 (stored-md5 (gethash p watch-dict)))
-             (when (not (equalp current-md5 stored-md5))
-               (setf (gethash p watch-dict) current-md5)
-               (setf changed t)))))))
+       (when (compile-input-p p)
+         (let ((current-md5 (md5:md5sum-file p))
+               (stored-md5 (gethash p watch-dict)))
+           (when (not (equalp current-md5 stored-md5))
+             (setf (gethash p watch-dict) current-md5)
+             (setf changed t))))))
     changed))
 
 (defun slumit-run-site ()
@@ -346,9 +351,6 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
                   (format t "Building project ...~%")
                   (slumit-build "main.lisp"))
                 (sleep 1))
-            (sb-int:simple-file-error (c)
-              (format t "I see you're working. Don't forget to save!...~%")
-              (sleep 10))
             (error (c)
               (format *error-output* "~%~%Caught error during rebuild:~% ~s~%~%" c)
               (format t "Press Enter to continue when you think its ok...~%")
