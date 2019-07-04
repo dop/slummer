@@ -61,16 +61,21 @@
                                   (@> *slummer* (render-view view)))
                                 true)))))))))))
 
-(defpsmacro defview (name &key attachment states render)
-  `(progn
-     (defvar ,name
-       (ps:create virtual nil
-                  attachment (if (stringp ,attachment)
-                                 (@> document (get-element-by-id ,attachment))
-                                 ,attachment)
-                  render (lambda () ,render)))
-     (dolist (state-var ,states)
-       (@> state-var "__registry" (push ,name)))))
+
+
+(defpsmacro defview (name state-vars handler-bindings render)
+  `(defun ,name (attachment ,@state-vars)
+     (labels ,handler-bindings
+       (let ((view-ob
+               (ps:create virtual nil
+                          attachment (if (stringp attachment)
+                                         (@> document (get-element-by-id attachment))
+                                         attachment)
+                          render (lambda () ,render))))
+         (dolist (state-var (ps:[] ,@state-vars))
+           (@> state-var "__registry" (push view-ob)))
+         (@> *slummer* (render-view view-ob))
+         view-ob))))
 
 
 (defpsmacro defmodule (name &rest body)
@@ -406,15 +411,15 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
   (defun inc-clicks ()
     (incf (@> *state* count)))
 
-  (defview main-view
-    :states (list *state*)
-    :render (div ()
-                 (p () (@> *state* count))
-                 (button ({} :onclick inc-clicks) \"click me\")))
+  (defview main-view (state)
+    ((inc-clicks () (incf (@> state count))))
+    (div ()
+         (p () (@> state count))
+         (button ({} :onclick inc-clicks) \"click me\")))
 
   (on window \"load\"
       (lambda ()
-        (attach-view main-view \"~a-app\"))))
+        (main-view \"~a-app\" *state*))))
 ")
 
 
