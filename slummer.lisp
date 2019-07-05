@@ -14,6 +14,21 @@
   "A convenience macro aliasing ps:chain."
   `(ps:chain ,@args))
 
+
+;; (let-slots (((x y) thing-1)
+;;            ((name age) person-2))
+;;   (list x y name age))
+;;
+;; (with-slots (x y) thing-1
+;;    (with-slots (name age) thing-2
+;;       (list x y name age)))
+(defpsmacro let-slots (slot-specs &rest body)
+  (if (consp slot-specs)
+      `(with-slots ,(caar slot-specs) ,(cadar slot-specs)
+         (let-slots ,(cdr slot-specs) ,@body))
+      `(progn ,@body)))
+
+
 (defpsmacro defelems (&rest names)
   "Used to define virtual DOM elements constructors en masse."
   (unless (null names)
@@ -398,7 +413,7 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
 ")
 
 (defparameter +app-template+ "
-(defmodule ~a
+(defmodule *~a*
 
   ;;; IMPORTS
   (import-from (*slummer* *html*) h1 p div button)
