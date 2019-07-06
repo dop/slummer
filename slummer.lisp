@@ -22,6 +22,21 @@
       `(progn ,@body)))
 
 
+(defpsmacro with-methods (methods object &rest body)
+  `(labels ,(mapcar #'(lambda (method)
+                        `(,method (&rest args)
+                                  (apply (getprop ,object ',method) args)))
+                      methods)
+     ,@body))
+
+
+(defpsmacro with-fields (slots methods object &rest body)
+  `(let ((object ,object))
+     (with-slots ,slots object
+       (with-methods ,methods object
+         ,@body))))
+
+
 (defpsmacro defelems (&rest names)
   "Used to define virtual DOM elements constructors en masse."
   (unless (null names)

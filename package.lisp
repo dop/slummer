@@ -6,10 +6,12 @@
 (defpackage #:slummer
   (:use #:cl #:parenscript)
   (:export
-   ;; convenience macros
+   ;; convenience parenscript macros
    #:@>
    #:{}
    #:let-slots
+   #:with-methods
+   #:with-fields
 
    ;; defines functions for semantic virtual dom element creation, should this
    ;; even be exported?
