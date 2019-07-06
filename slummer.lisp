@@ -15,13 +15,6 @@
   `(ps:chain ,@args))
 
 
-;; (let-slots (((x y) thing-1)
-;;            ((name age) person-2))
-;;   (list x y name age))
-;;
-;; (with-slots (x y) thing-1
-;;    (with-slots (name age) thing-2
-;;       (list x y name age)))
 (defpsmacro let-slots (slot-specs &rest body)
   (if (consp slot-specs)
       `(with-slots ,(caar slot-specs) ,(cadar slot-specs)
@@ -42,7 +35,7 @@
   (let ((parts (cl-strings:split template #\/)))
     (cons (car parts) (mapcar #'read-from-string (cdr parts)))))
 
-(defmacro+ps defroute (template &body body)
+(defpsmacro defroute (template &body body)
   (let* ((parsed (parse-route-template template))
          (fname (gensym (format nil "~a-route" (car parsed)))))
     `(progn
@@ -402,8 +395,9 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
 (with-site-context (*~a-site*) ; add context keywords if you need them
 
   (include \"app.paren\")
+  (include \"style.lass\")
 
-  (defpage \"index.html\" (:scripts (\"app.js\"))
+  (defpage \"index.html\" (:scripts (\"app.js\") :styles (\"style.css\"))
     (:h1 \"Hello, Click Fiend.\")
     (:div :id \"clicker-1\")
     (:div :id \"clicker-2\" ))
@@ -440,6 +434,22 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
         (main-view \"clicker-2\" second-counter))))
 ")
 
+(defparameter +style-template+ "
+(:let ((text-color \"#f5f0e8\"))
+  (body
+   :color #(text-color)
+   :background-color \"#454545\")
+
+  (button
+   :background-color \"#b00b51\"
+   :border none
+   :padding 10px 30px
+   :font-size 16px
+   :color #(text-color)))
+")
+
+(defun write-style-template (stream)
+  (format stream +style-template+))
 
 (defun write-site-template (stream name)
   (format stream +site-template+ name name name name name name))
@@ -458,7 +468,9 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
     (with-open-file (out (concatenate 'string path "/main.lisp") :direction :output)
       (write-site-template out name))
     (with-open-file (out (concatenate 'string path "/app.paren") :direction :output)
-      (write-app-template out name))))
+      (write-app-template out name))
+    (with-open-file (out (concatenate 'string path "/style.lass") :direction :output)
+      (write-style-template out))))
 
 
 

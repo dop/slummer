@@ -9,6 +9,7 @@
    ;; convenience macros
    #:@>
    #:{}
+   #:let-slots
 
    ;; defines functions for semantic virtual dom element creation, should this
    ;; even be exported?
