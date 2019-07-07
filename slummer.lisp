@@ -30,7 +30,15 @@
      ,@body))
 
 
-(defpsmacro with-fields (slots methods object &rest body)
+(defpsmacro with-object (object slots methods &rest body)
+  "A convenience macro that combines with-slots and with-methods a single call.
+It departs from the ordinary calling order by putting the expression that
+evaluates to the object first.
+ E.g.
+
+(with-object (@> gonna make a (cool-thing 1 2 3)) (slot1 slot2) (method1 method2)
+  .... do stuff)
+"
   `(let ((object ,object))
      (with-slots ,slots object
        (with-methods ,methods object

@@ -11,7 +11,7 @@
    #:{}
    #:let-slots
    #:with-methods
-   #:with-fields
+   #:with-object
 
    ;; defines functions for semantic virtual dom element creation, should this
    ;; even be exported?
