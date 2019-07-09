@@ -47,6 +47,18 @@ evaluates to the object first.
          ,@body))))
 
 
+(defpsmacro defstruct-ps (name &rest slots)
+  `(progn
+     (defun ,(read-from-string (format nil "make-~a" name))
+         (&key ,@slots)
+       ({} ,@(mapcan (lambda (slot) (list slot slot)) slots)))
+     ,@(mapcar (lambda (slot)
+                 `(defun ,(read-from-string (format nil "~a-~a" name slot)) (ob val)
+                    (if (or val (= val 0) (eq val false))
+                        (setf (@> ob ,slot) val)
+                        (@> ob ,slot))))
+               slots)))
+
 (defpsmacro defelems (&rest names)
   "Used to define virtual DOM elements constructors en masse."
   (unless (null names)
