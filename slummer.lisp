@@ -3,6 +3,9 @@
 (named-readtables:in-readtable :parenscript)
 (in-package #:slummer)
 
+;; the default is 1.3
+(setf ps:*js-target-version* "1.8.5")
+
 ;;; Parenscript Macros
 
 ;; NB: The following macro exists b/c ps:{} wasn't working for some reason
@@ -28,7 +31,6 @@
                                   (apply (getprop ,object ',method) args)))
                       methods)
      ,@body))
-
 
 (defpsmacro with-object (object slots methods &rest body)
   "A convenience macro that combines with-slots and with-methods a single call.
