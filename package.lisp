@@ -12,7 +12,7 @@
    #:let-slots
    #:with-methods
    #:with-object
-   #:defstruct-ps
+   #:defstruct
 
    ;; defines functions for semantic virtual dom element creation, should this
    ;; even be exported?
