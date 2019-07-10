@@ -46,6 +46,11 @@ evaluates to the object first.
        (with-methods ,methods object
          ,@body))))
 
+(defun constructor-name-of (name) (read-from-string (format nil "make-~a" name)))
+(defun accessor-name-for (name slot) (read-from-string (format nil "~a-~a" name slot)))
+(defun getf-accessor-name-for (name slot)
+  (read-from-string (format nil "__setf_~a-~a" name slot)))
+
 (defpsmacro defstruct (name &rest slots)
   "SLOTS is either a symbol or a pair (SLOT-NAME INIT-VAL). Creates a function
   called MAKE-<NAME> and an access for each slot called <NAME>-<SLOT> that works
@@ -57,16 +62,18 @@ evaluates to the object first.
                        (if (listp slot)
                            (list (car slot) (car slot))
                            (list slot slot)))
+
                      slots)))
      ,@(mapcar (lambda (slot)
                  (let* ((slot (if (listp slot) (car slot) slot))
-                        (accessor-name (read-from-string (format nil "~a-~a" name slot))))
+                        (accessor-name (accessor-name-for name slot)))
                    `(progn
                       (defun ,accessor-name (ob)
                         (@> ob ,slot))
                       (defun (setf ,accessor-name) (new-val ob)
                         (setf (@> ob ,slot) new-val)))))
                  slots)))
+
 
 (defpsmacro defelems (&rest names)
   "Used to define virtual DOM elements constructors en masse."
@@ -159,6 +166,14 @@ represents a module path to the module being defined."
                  (list 'setf (list '@ '*exports* name) name))
                names)))
 
+(defpsmacro export-struct (name &rest slots)
+  "Export a struct constructor and its slot accessors from a module."
+  (let ((make-name (constructor-name-of name))
+        (slot-names (loop for slot in slots collect (accessor-name-for name slot)))
+        (getf-slot-names (loop for slot in slots collect (getf-accessor-name-for name slot))))
+    `(export ,make-name ,@(nconc slot-names getf-slot-names))))
+
+
 (defpsmacro import-from (module-name &rest symbs)
   "To be called from within the body of DEFMODULE. Imports names into the
 current module. Each member of SYMBS can be either a symbol or a pair of
@@ -172,6 +187,12 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
                             (list 'defvar local (append (cons '@ module-name) (list foreign))))))
                       symbs)))
 
+(defpsmacro import-struct-from (module-name struct &rest slot-names)
+  (let ((make-name (constructor-name-of struct))
+        (accessors (loop for slot in slot-names collect (accessor-name-for struct slot)))
+        (getf-accessors
+          (loop for slot in slot-names collect (getf-accessor-name-for struct slot))))
+    `(import-from ,module-name ,make-name ,@(nconc accessors getf-accessors))))
 
 ;;; Spinneret Macros & Functions
 

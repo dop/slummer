@@ -21,7 +21,9 @@
    ;; modularity macros
    #:defmodule
    #:export
+   #:export-struct
    #:import-from
+   #:import-struct-from
 
    ;; reactive making applications
    #:defview

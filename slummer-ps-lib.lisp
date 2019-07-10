@@ -285,7 +285,9 @@ accepts a MAP-FN argument that should turn the members of LS into ELEMs"
    (with-slots (red blue green alpha) color
      (+ "rgba(" red "," green "," blue "," alpha  ")")))
 
- (export random-color make-color color->string)) ; end of SLUMMER.GRAPHICS
+ (export-struct color red green blue alpha)
+ (export random-color color->string)) ; end of SLUMMER.GRAPHICS
+
 
 ;;; Working with html5 canvas as a drawing surface, low level
 (defmodule (*slummer* *graphics* *canvas*)
