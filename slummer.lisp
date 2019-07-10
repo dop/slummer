@@ -46,8 +46,10 @@ evaluates to the object first.
        (with-methods ,methods object
          ,@body))))
 
-
-(defpsmacro defstruct-ps (name &rest slots)
+(defpsmacro defstruct (name &rest slots)
+  "SLOTS is either a symbol or a pair (SLOT-NAME INIT-VAL). Creates a function
+  called MAKE-<NAME> and an access for each slot called <NAME>-<SLOT> that works
+  with SETF."
   `(progn
      (defun ,(read-from-string (format nil "make-~a" name))
          (&key ,@slots)
@@ -57,11 +59,13 @@ evaluates to the object first.
                            (list slot slot)))
                      slots)))
      ,@(mapcar (lambda (slot)
-                 (let ((slot (if (listp slot) (car slot) slot)))
-                   `(defun ,(read-from-string (format nil "~a-~a" name slot)) (ob val)
-                      (if (or val (= val 0) (eq val false))
-                          (setf (@> ob ,slot) val)
-                          (@> ob ,slot)))))
+                 (let* ((slot (if (listp slot) (car slot) slot))
+                        (accessor-name (read-from-string (format nil "~a-~a" name slot))))
+                   `(progn
+                      (defun ,accessor-name (ob)
+                        (@> ob ,slot))
+                      (defun (setf ,accessor-name) (new-val ob)
+                        (setf (@> ob ,slot) new-val)))))
                  slots)))
 
 (defpsmacro defelems (&rest names)
