@@ -3,8 +3,9 @@
 (defvar *slummer-ps-lib*
 '(progn
 
-(defmodule *slummer*
 ;;; The core virtual DOM type and some utility functions
+(defmodule *slummer*
+
 
     (defun elem (tag &optional (properties ({})) (children ([])))
       "TAG is an html tag, PROPS is an object and CHILDREN is an array of elements
@@ -96,7 +97,8 @@ node."
             (chain new-node (append-child (realize-elem child))))
           new-node)))
 
-  (defun update-properties (node old-props new-props)
+
+ (defun update-properties (node old-props new-props)
     (dolist (prop (keys-for old-props new-props))
       (update-property node
                        prop
@@ -136,8 +138,17 @@ node."
                               (getprop new-elem 'children (- max-len 1 idx))
                               (- max-len 1 idx))))))))
 
+
+ (defun query (arg)
+   "Query the DOM. If the query is in CSS id attribute notation, then a single
+element is returned, otherwise an array of matches is returned."
+   (if (equal (elt arg 0) "#")
+       (@> document (query-selector arg))
+       (@> -Array (from (@> document (query-selector-all arg))))))
+
  (defun on (ob evt handler)
-   (@> ob (add-event-listener evt handler)))
+   (let ((ob (if (stringp ob) (query ob) ob)))
+     (@> ob (add-event-listener evt handler))))
 
  (defun attach-view (view attachment)
    (setf (@> view attachment)
@@ -151,14 +162,12 @@ node."
      (update-elem (@> view attachment) (@> view virtual) new-virtual)
      (setf (@> view virtual) new-virtual)))
 
-
-  (export elem elem-prop render-view attach-view on)) ; end defmodule *slummer*
-
+  (export elem render-view attach-view on query)) ; end defmodule *slummer*
 
 
-(defmodule (*slummer* *html*)
 ;;; HTML builders for virtual DOM elements
 ;;; see https://developer.mozilla.org/en-US/docs/Web/HTML/Element
+(defmodule (*slummer* *html*)
 
   (import-from *slummer* elem)
 
@@ -209,11 +218,10 @@ accepts a MAP-FN argument that should turn the members of LS into ELEMs"
         (elem "ol" props (mapcar map-fn ls))))
 
 
-  (export list->ul list->ol)) ; ends *html* module
+  (export list->ul list->ol)) ; ends SLUMMER.HTML
 
 
-
-
+;;; Odds and ends - Utilities.
 (defmodule (*slummer* *util*)
  "utility library"
  (defun ->string (arg)
@@ -227,9 +235,31 @@ accepts a MAP-FN argument that should turn the members of LS into ELEMs"
  (defun list (&rest args)
    args)
 
-  (export ->string cons list))
+  (export ->string cons list)) ; end of SLUMMER.UTIL
+
+;;; Creating and selecting random values.
+(defmodule (*slummer* *random*)
+ "Random operations"
+
+ (defun pick (ary)
+   (elt ary (random (length ary))))
+
+ (defun pick-pop (ary)
+   (let* ((idx (random (length ary)))
+          (val (elt ary idx)))
+     (@> ary (slice idx 1))
+     val))
+
+ (defun rand (&optional lo hi)
+   (cond ((not lo) (random))
+         ((not hi) (random lo))
+         (true
+          (+ lo (random (- hi lo))))))
+
+ (export pick pick-pop rand)) ; end of SLUMMER.RANDOM
 
 
+;;; JSON Serialization
 (defmodule (*slummer* *json*)
 
  (defun ->json (ob)
@@ -238,7 +268,83 @@ accepts a MAP-FN argument that should turn the members of LS into ELEMs"
  (defun parse (str)
    (@> *json* (parse str)))
 
- (export ->json parse))
+ (export ->json parse)) ; end of SLUMMER.JSON
+
+
+;;; Basic graphics utilities
+(defmodule (*slummer* *graphics*)
+
+ (defstruct-ps color (red 0) (green 0) (blue 0) (alpha 1.0))
+
+ (defun random-color ()
+   (make-color :red (random 256)
+               :green (random 256)
+               :blue (random 256)))
+
+ (defun color->string (color)
+   (with-slots (red blue green alpha) color
+     (+ "rgba(" red "," green "," blue "," alpha  ")")))
+
+ (export random-color make-color color->string)) ; end of SLUMMER.GRAPHICS
+
+;;; Working with html5 canvas as a drawing surface, low level
+(defmodule (*slummer* *graphics* *canvas*)
+ "Canvas primitives"
+
+ (defun make-canvas (&optional from-dom)
+   (let ((canvas
+           (cond ((stringp from-dom)
+                  (@> *slummer* (query from-dom)))
+                 ((null from-dom)
+                  (@> document (create-element "canvas")))
+                 (true from-dom))))
+     ({} ctx (@> canvas (get-context "2d"))
+         elem canvas)))
+
+ (macrolet
+     ((defaccessors (&rest specs)
+        (when specs
+          (destructuring-bind (prop sub-prop . name) (car specs)
+            `(progn
+               (defun ,(if name (car name) prop) (canvas &optional new-val)
+                 (if (or new-val (= 0 new-val) (eq false new-val))
+                     (setf (@> canvas ,prop ,sub-prop) new-val)
+                     (@> canvas ,prop ,sub-prop)))
+               (export ,(if name (car name) prop))
+               (defaccessors ,@(cdr specs)))))))
+
+   (defaccessors
+     (elem height canvas-height)
+     (elem width canvas-width)
+     (elem fill-style)
+     (ctx line-style)
+     (ctx line-width)
+     (ctx line-cap)
+     (ctx line-join)
+     (ctx miter-limit)
+     (ctx font)
+     (ctx text-align)
+     (ctx text-baseline)
+     (ctx direction) ))
+
+ (macrolet
+     ((ctx-proxy (&rest names)
+        (when names
+          `(progn
+             (defun ,(car names) (canvas &rest args)
+               (apply (ps:@ canvas ctx) args))
+             (export ,(car names))
+             (ctx-proxy ,@(cdr names))))))
+   (ctx-proxy fill-rect stroke-rect clear-rect
+              begin-path close-path stroke fill
+              move-to line-to arc arc-to
+              quadratic-curve-to bezier-curve-to
+              fill-text stroke-text
+              draw-image
+              save restore))
+
+ (export make-canvas)) ;; end of slummer canvas
+
 
 
 (defmodule (*slummer* *net*)
