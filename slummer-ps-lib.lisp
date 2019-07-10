@@ -274,7 +274,7 @@ accepts a MAP-FN argument that should turn the members of LS into ELEMs"
 ;;; Basic graphics utilities
 (defmodule (*slummer* *graphics*)
 
- (defstruct-ps color (red 0) (green 0) (blue 0) (alpha 1.0))
+ (defstruct color (red 0) (green 0) (blue 0) (alpha 1.0))
 
  (defun random-color ()
    (make-color :red (random 256)
