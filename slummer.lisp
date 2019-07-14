@@ -3,6 +3,8 @@
 (named-readtables:in-readtable :parenscript)
 (in-package #:slummer)
 
+(defparameter +slummer-version+ '(0 1 0))
+
 ;; the default is 1.3
 (setf ps:*js-target-version* "1.8.5")
 
@@ -452,6 +454,8 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
 
 (in-package #:~a)
 
+(defparameter +made-with-version+ '~a)
+
 ;; variable holding the site
 (defvar *~a-site*)
 (setf *~a-site* (fresh-site))
@@ -519,7 +523,7 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
   (format stream +style-template+))
 
 (defun write-site-template (stream name)
-  (format stream +site-template+ name name name name name name))
+  (format stream +site-template+ name name +slummer-version+ name name name name))
 
 (defun write-app-template (stream name)
   (format stream +app-template+ name))
