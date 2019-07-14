@@ -3,7 +3,7 @@
 (named-readtables:in-readtable :parenscript)
 (in-package #:slummer)
 
-(defparameter +slummer-version+ '(0 1 0))
+(defparameter +slummer-version+ '(0 2 0))
 
 ;; the default is 1.3
 (setf ps:*js-target-version* "1.8.5")
@@ -362,9 +362,16 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
 
 ;;; slum-it
 
+(defun print-version ()
+  (destructuring-bind (major minor bugfix) +slummer-version+
+    (format t "you have the honor of using slummer version ~a.~a.~a~%"
+            major minor bugfix)))
+
+
 (defparameter +commands+
   (list "slummer build"
         "slummer run"
+        "slummer version"
         "slummer new <name>"))
 
 (defun slum-it ()
@@ -378,6 +385,10 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
           ((and (= 2 arg-length)
                 (equal "build" (string-downcase (second args))))
            (slumit-build "main.lisp"))
+
+          ((and (= 2 arg-length)
+                (equal "version" (string-downcase (second args))))
+           (print-version))
 
           ((and (= 3 arg-length)
                 (equal "new" (string-downcase (second args))))

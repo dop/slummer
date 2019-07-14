@@ -352,11 +352,21 @@ accepts a MAP-FN argument that should turn the members of LS into ELEMs"
 (defmodule (*slummer* *net*)
   "Some networking tools."
 
-  (defun xhr (url on-load &key (method "GET") payload)
+ (defun xhr (url &key
+                   (method "GET")
+                   (response-type "text")
+                   payload
+                   on-error
+                   on-load)
     "Make an XHR request to URL calling ON-LOAD on the response. The default
     METHOD is the string \"GET\", and the default PAYLOAD is NIL."
-    (let ((req (ps:new (-X-M-L-Http-Request)))) 
-      (@> req (add-event-listener "load" on-load))
+   (let ((req (ps:new (-X-M-L-Http-Request))))
+      (setf (@> req response-type) response-type)
+      (when on-load
+        (let ((handler (lambda () (funcall on-load (@> req response)))))
+          (@> req (add-event-listener "load" handler))))
+      (when on-error
+        (@> req (add-event-listener "error" on-error)))
       (@> req (open method url))
       (@> req (send payload))))
 
