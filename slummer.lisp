@@ -161,19 +161,21 @@ represents a module path to the module being defined."
                  *exports*)))))))
 
 
-(defpsmacro export (&rest names)
-  "To be called within the body a DEFMODULE. Exports a NAMES from the containing module."
-  `(progn
-     ,@(mapcar (lambda (name)
-                 (list 'setf (list '@ '*exports* name) name))
-               names)))
+(defun setf-name-of (name)
+  (read-from-string (format nil "__setf_~a" name)))
 
-(defpsmacro export-struct (name &rest slots)
-  "Export a struct constructor and its slot accessors from a module."
-  (let ((make-name (constructor-name-of name))
-        (slot-names (loop for slot in slots collect (accessor-name-for name slot)))
-        (getf-slot-names (loop for slot in slots collect (getf-accessor-name-for name slot))))
-    `(export ,make-name ,@(nconc slot-names getf-slot-names))))
+(defpsmacro export (&rest names)
+  "To be called within the body a DEFMODULE. Exports NAMES from the containing
+module. If a name is a SETF DEFUN, it will export the SETF version as well."
+  (let* ((name-exports (loop for name in names collect
+                             `(setf (@ *exports* ,name) ,name)))
+         (setf-names (loop for name in names
+                           collect (setf-name-of name)))
+         (setf-name-exports (loop for name in setf-names
+                                  collect `(when (equal "function" (typeof ,name))
+                                             (setf (@ *exports* ,name) ,name)))))
+    `(progn
+       ,@(nconc name-exports setf-name-exports))))
 
 
 (defpsmacro import-from (module-name &rest symbs)
@@ -181,20 +183,22 @@ represents a module path to the module being defined."
 current module. Each member of SYMBS can be either a symbol or a pair of
 symbols. In the case of the example pair (EXTERNAL LOCAL) the EXTERNAL symbol
 is bound to the LOCAL symbol.  This lets you avoid name conflicts."
-  `(progn ,@(mapcar (lambda (s)
-                      (let ((local (if (symbolp s) s (cadr s)))
+  (let* ((imports
+           (mapcar (lambda (s)
+                     (let* ((local (if (symbolp s) s (cadr s)))
                             (foreign (if (symbolp s) s (car s))))
-                        (if (symbolp module-name)
-                            (list 'defvar local (list '@ module-name foreign))
-                            (list 'defvar local (append (cons '@ module-name) (list foreign))))))
-                      symbs)))
+                       (if (symbolp module-name)
+                           `(progn
+                              (defvar ,local (@ ,module-name ,foreign))
+                              (defvar ,(setf-name-of local)
+                                (@ ,module-name ,(setf-name-of foreign))))
+                           `(progn
+                              (defvar ,local (@ ,@(append module-name (list foreign))))
+                              (defvar ,(setf-name-of local)
+                                (@ ,@(append module-name (list (setf-name-of foreign)))))))))
+                   symbs)))
+    `(progn ,@imports)))
 
-(defpsmacro import-struct-from (module-name struct &rest slot-names)
-  (let ((make-name (constructor-name-of struct))
-        (accessors (loop for slot in slot-names collect (accessor-name-for struct slot)))
-        (getf-accessors
-          (loop for slot in slot-names collect (getf-accessor-name-for struct slot))))
-    `(import-from ,module-name ,make-name ,@(nconc accessors getf-accessors))))
 
 ;;; Spinneret Macros & Functions
 

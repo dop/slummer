@@ -285,58 +285,61 @@ accepts a MAP-FN argument that should turn the members of LS into ELEMs"
    (with-slots (red blue green alpha) color
      (+ "rgba(" red "," green "," blue "," alpha  ")")))
 
- (export-struct color red green blue alpha)
- (export random-color color->string)) ; end of SLUMMER.GRAPHICS
+
+ (export random-color color->string
+  make-color color-red color-green color-blue color-alpha)) ; end of SLUMMER.GRAPHICS
 
 
-;;; Working with html5 canvas as a drawing surface, low level
-(defmodule (*slummer* *graphics* *canvas*)
+;; Working with html5 canvas as a drawing surface, low level
+(defmodule (*slummer* *graphics* *surface*)
  "Canvas primitives"
 
- (defun make-canvas (&optional from-dom)
+ (defstruct surface context canvas)
+
+ (defun new-surface (&optional dom-elem)
    (let ((canvas
-           (cond ((stringp from-dom)
-                  (@> *slummer* (query from-dom)))
-                 ((null from-dom)
-                  (@> document (create-element "canvas")))
-                 (true from-dom))))
-     ({} ctx (@> canvas (get-context "2d"))
-         elem canvas)))
+           (cond ((null dom-elem) (@> document (create-element "canvas")))
+                 ((stringp dom-elem) (@> *slummer* (query dom-elem)))
+                 (t from-dom))))
+     (make-surface :canvas canvas
+                   :context (@> canvas (get-context "2d")))))
 
  (macrolet
      ((defaccessors (&rest specs)
-        (when specs
-          (destructuring-bind (prop sub-prop . name) (car specs)
-            `(progn
-               (defun ,(if name (car name) prop) (canvas &optional new-val)
-                 (if (or new-val (= 0 new-val) (eq false new-val))
-                     (setf (@> canvas ,prop ,sub-prop) new-val)
-                     (@> canvas ,prop ,sub-prop)))
-               (export ,(if name (car name) prop))
-               (defaccessors ,@(cdr specs)))))))
-
+        (let ((expanded
+                (mapcan (lambda (spec)
+                          (destructuring-bind (prop sub-prop . name) spec
+                            (let ((dname (if name (car name) prop)))
+                              (list
+                               `(defun ,dname (surface)
+                                  (@> surface ,prop ,sub-prop))
+                               `(defun (setf ,dname) (newval surface)
+                                  (setf (@> surface ,prop ,sub-prop) newval))
+                               `(export ,dname)))))
+                        specs)))
+          `(progn ,@expanded))))
    (defaccessors
-     (elem height canvas-height)
-     (elem width canvas-width)
-     (elem fill-style)
-     (ctx line-style)
-     (ctx line-width)
-     (ctx line-cap)
-     (ctx line-join)
-     (ctx miter-limit)
-     (ctx font)
-     (ctx text-align)
-     (ctx text-baseline)
-     (ctx direction) ))
+       (canvas height canvas-height)
+        (canvas width canvas-width)
+        (canvas fill-style)
+        (context line-style)
+        (context line-width)
+        (context line-cap)
+        (context line-join)
+        (context miter-limit)
+        (context font)
+        (context text-align)
+        (context text-baseline)
+        (context direction)))
 
  (macrolet
      ((ctx-proxy (&rest names)
-        (when names
-          `(progn
-             (defun ,(car names) (canvas &rest args)
-               (apply (ps:@ canvas ctx) args))
-             (export ,(car names))
-             (ctx-proxy ,@(cdr names))))))
+        (cons 'progn
+              (mapcan (lambda (name)
+                        (list `(defun ,name (surface &rest args)
+                                 (apply (ps:@ surface context ,name) args))
+                              `(export ,name)))
+                      names))))
    (ctx-proxy fill-rect stroke-rect clear-rect
               begin-path close-path stroke fill
               move-to line-to arc arc-to
@@ -345,9 +348,7 @@ accepts a MAP-FN argument that should turn the members of LS into ELEMs"
               draw-image
               save restore))
 
- (export make-canvas)) ;; end of slummer canvas
-
-
+ (export new-surface)) ;; end of (*slummer* *graphics* *surface*)
 
 (defmodule (*slummer* *net*)
   "Some networking tools."
