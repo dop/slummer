@@ -3,7 +3,7 @@
 (named-readtables:in-readtable :parenscript)
 (in-package #:slummer)
 
-(defparameter +slummer-version+ '(0 2 0))
+(defparameter +slummer-version+ '(0 3 1))
 
 ;; the default is 1.3
 (setf ps:*js-target-version* "1.8.5")
