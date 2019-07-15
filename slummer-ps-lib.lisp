@@ -346,7 +346,8 @@ accepts a MAP-FN argument that should turn the members of LS into ELEMs"
               quadratic-curve-to bezier-curve-to
               fill-text stroke-text
               draw-image
-              save restore))
+              save restore
+              translate rotate scale-float))
 
  (export new-surface)) ;; end of (*slummer* *graphics* *surface*)
 
