@@ -9,6 +9,7 @@
    ;; convenience parenscript macros
    #:@>
    #:{}
+   #:setf+
    #:let-slots
    #:with-methods
    #:with-object

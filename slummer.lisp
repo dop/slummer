@@ -19,6 +19,12 @@
   "A convenience macro aliasing ps:chain."
   `(ps:chain ,@args))
 
+(defpsmacro setf+ (place val)
+  (if (consp place)
+      (destructuring-bind (accessor object) place
+        `(,(setf-name-of accessor) ,val ,object))
+      `(setf ,place ,val)))
+
 
 (defpsmacro let-slots (slot-specs &rest body)
   (if (consp slot-specs)

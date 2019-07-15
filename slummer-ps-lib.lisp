@@ -349,7 +349,16 @@ accepts a MAP-FN argument that should turn the members of LS into ELEMs"
               save restore
               translate rotate scale-float))
 
- (export new-surface)) ;; end of (*slummer* *graphics* *surface*)
+ (defun clear-surface (surface &optional color)
+   (if color
+       (progn
+         (save surface)
+         (setf+ (surface-fill-style surface) color)
+         (fill-rect surface 0 0 (surface-width surface) (surface-height surface))
+         (restore surface))
+       (clear-rect surface 0 0 (surface-width surface) (surface-height surface))))
+
+ (export new-surface clear-surface)) ;; end of (*slummer* *graphics* *surface*)
 
 (defmodule (*slummer* *net*)
   "Some networking tools."
