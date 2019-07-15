@@ -308,8 +308,8 @@ accepts a MAP-FN argument that should turn the members of LS into ELEMs"
      ((defaccessors (&rest specs)
         (let ((expanded
                 (mapcan (lambda (spec)
-                          (destructuring-bind (prop sub-prop . name) spec
-                            (let ((dname (if name (car name) prop)))
+                          (destructuring-bind (prop sub-prop) spec
+                            (let ((dname (read-from-string (format nil "surface-~a" sub-prop))))
                               (list
                                `(defun ,dname (surface)
                                   (@> surface ,prop ,sub-prop))
@@ -319,18 +319,18 @@ accepts a MAP-FN argument that should turn the members of LS into ELEMs"
                         specs)))
           `(progn ,@expanded))))
    (defaccessors
-       (canvas height canvas-height)
-        (canvas width canvas-width)
-        (canvas fill-style)
-        (context line-style)
-        (context line-width)
-        (context line-cap)
-        (context line-join)
-        (context miter-limit)
-        (context font)
-        (context text-align)
-        (context text-baseline)
-        (context direction)))
+     (canvas height)
+     (canvas width)
+     (context fill-style)
+     (context line-style)
+     (context line-width)
+     (context line-cap)
+     (context line-join)
+     (context miter-limit)
+     (context font)
+     (context text-align)
+     (context text-baseline)
+     (context direction)))
 
  (macrolet
      ((ctx-proxy (&rest names)
