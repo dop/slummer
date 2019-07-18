@@ -301,8 +301,10 @@ accepts a MAP-FN argument that should turn the members of LS into ELEMs"
            (cond ((null dom-elem) (@> document (create-element "canvas")))
                  ((stringp dom-elem) (@> *slummer* (query dom-elem)))
                  (t from-dom))))
-     (make-surface :canvas canvas
-                   :context (@> canvas (get-context "2d")))))
+     (let ((surface (make-surface :canvas canvas
+                                  :context (@> canvas (get-context "2d")))))
+       (disable-image-smoothing surface)
+       surface)))
 
  (macrolet
      ((defaccessors (&rest specs)
@@ -347,7 +349,19 @@ accepts a MAP-FN argument that should turn the members of LS into ELEMs"
               fill-text stroke-text
               draw-image
               save restore
-              translate rotate scale-float))
+              translate rotate scale))
+
+ (defun disable-image-smoothing (surface)
+   (setf (@> surface context image-smoothing-enabled) false)
+   (setf (@> surface context moz-image-smoothing-enabled) false)
+   (setf (@> surface context webkit-image-smoothing-enabled) false)
+   (setf (@> surface context ms-image-smoothing-enabled) false))
+
+ (defun enable-image-smoothing (surface)
+   (setf (@> surface context image-smoothing-enabled) true)
+   (setf (@> surface context moz-image-smoothing-enabled) true)
+   (setf (@> surface context webkit-image-smoothing-enabled) true)
+   (setf (@> surface context ms-image-smoothing-enabled) true))
 
  (defun clear-surface (surface &optional color)
    (if color
@@ -358,7 +372,8 @@ accepts a MAP-FN argument that should turn the members of LS into ELEMs"
          (restore surface))
        (clear-rect surface 0 0 (surface-width surface) (surface-height surface))))
 
- (export new-surface clear-surface)) ;; end of (*slummer* *graphics* *surface*)
+ (export new-surface clear-surface
+  disable-image-smoothing enable-image-smoothing)) ;; end of (*slummer* *graphics* *surface*)
 
 (defmodule (*slummer* *net*)
   "Some networking tools."
