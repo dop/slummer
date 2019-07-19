@@ -3,7 +3,7 @@
 (named-readtables:in-readtable :parenscript)
 (in-package #:slummer)
 
-(defparameter +slummer-version+ '(0 3 1))
+(defparameter +slummer-version+ '(0 4 0))
 
 ;; the default is 1.3
 (setf ps:*js-target-version* "1.8.5")
@@ -66,11 +66,11 @@ evaluates to the object first.
   `(progn
      (defun ,(read-from-string (format nil "make-~a" name))
          (&key ,@slots)
-       ({} ,@(mapcan (lambda (slot)
+       ({} struct ',name
+           ,@(mapcan (lambda (slot)
                        (if (listp slot)
                            (list (car slot) (car slot))
                            (list slot slot)))
-
                      slots)))
      ,@(mapcar (lambda (slot)
                  (let* ((slot (if (listp slot) (car slot) slot))
@@ -81,6 +81,30 @@ evaluates to the object first.
                       (defun (setf ,accessor-name) (new-val ob)
                         (setf (@> ob ,slot) new-val)))))
                  slots)))
+
+(defpsmacro defmethod (name lambda-list &body body)
+  (let ((profile (string-downcase
+                  (cl-strings:join
+                   (loop for e in lambda-list
+                         collect (if (consp e)
+                                     (format nil "~a" (second e))
+                                     "__unspecified__")))))
+        (arg-list (loop for e in lambda-list
+                        collect (if (consp e) (car e) e))))
+    `(progn
+       (defvar ,name
+         (lambda (&rest args)
+           (let ((profile ""))
+             (dolist (arg args)
+               (if (not (equal "undefined" (typeof (ps:@ arg struct))))
+                   (setf profile (+ profile (ps:@ arg struct)))
+                   (setf profile (+ profile "__unspecified__"))))
+             (@> console (log profile))
+             (apply (getprop ,name profile) args))))
+
+       (setf (getprop ,name ,profile) (lambda ,arg-list ,@body)))))
+
+
 
 
 (defpsmacro defelems (&rest names)
@@ -183,6 +207,11 @@ module. If a name is a SETF DEFUN, it will export the SETF version as well."
     `(progn
        ,@(nconc name-exports setf-name-exports))))
 
+
+(defpsmacro defunpub (name ll &body body)
+  `(progn
+     (defun ,name ,ll ,@body)
+     (export ,name)))
 
 (defpsmacro import-from (module-name &rest symbs)
   "To be called from within the body of DEFMODULE. Imports names into the

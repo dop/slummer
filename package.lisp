@@ -9,11 +9,14 @@
    ;; convenience parenscript macros
    #:@>
    #:{}
-   #:setf+
    #:let-slots
    #:with-methods
    #:with-object
+
+   ;; data definition
    #:defstruct
+   #:setf+
+   #:defmethod
 
    ;; defines functions for semantic virtual dom element creation, should this
    ;; even be exported?
@@ -22,6 +25,7 @@
    ;; modularity macros
    #:defmodule
    #:export
+   #:defunpub
    #:export-struct
    #:import-from
    #:import-struct-from
