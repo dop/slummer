@@ -2,15 +2,15 @@
 
   *A Sordid Tale in which Lisp Visits the Browser*
 
-  Slummer is (for now) a tool for reactive web front ends in Common Lisp. It is
-  both a library of (mostly) macros and a command line tool.
+  Slummer is (for now) a tool to create web front ends and static sites in
+  Common Lisp. It is both a library and a command line tool.
 
 *** Key features  
 
     - *100% Lisp*. Never write a single line of HTML, JavaScript, or CSS.
     - *Development Server*. Fire up the server and watch your app rebuild whenever
-      change the source code.
-    - Supports *reactive components* (if you want) using the ~defstate~ and
+      your app's source changes.
+    - Supports *reactive components* (if you want them) using the ~defstate~ and
       ~defview~ macros. 
     - Uses [[https://shinmera.github.io/LASS/][LASS]] and [[https://github.com/ruricolist/spinneret][Spinneret]] for CSS and HTML generation respectively.
     - Uses [[https://common-lisp.net/project/parenscript/][Parenscript]] (for the time being, see below) to generate Javascript.
@@ -47,8 +47,9 @@ Building project ...
     used to generate css at build time.
 
   The ~slummer run~ command builds the project and runs the development server,
-  which will recompile your project whenever you make a change to any file with
-  one of the ~.lisp~, ~.paren~, ~.lass~ extensions in your project directory.
+  which will recompile your project whenever you make a change to any of your
+  project files. Specifically, changes to files that end in ~.lisp~, ~.paren~,
+  or ~.lass~ will trigger a project rebuild.
 
 *** The Main Lisp File 
 
@@ -88,18 +89,21 @@ Building project ...
 #+end_src
 
  In the above, you see a variable called ~*some-kludge-site*~ set to the value
- of ~(fresh-site)~, which is a site context. the site context is a data
- structuer that will contain all of the objects that will eventually be built.
- Indeed, you can see this happening with the call to ~build-site~ at the bottom
- of the file.
+ of ~(fresh-site)~, which returns a *site context*. A site context is a data
+ structure that used to hold and organize all of the objects that will
+ eventually be built. In particular, the site context holds page defintions,
+ style defintions, media file locations, scripts, and so on. A site context is
+ then passed to ~build-site~ as the last step.
 
  Once a site context is available, the ~with-site-context~ is used to create
- some build objects. In this case, two files are included, and an HTML page is
- added "inline". 
+ some build objects. In this case, two files are "included" into the project,
+ and an HTML page defined "inline".
 
 *** The Example Parenscript File 
 
-  Just to get a sense for what ~slummer~ application code looks like:
+    The bulk of the code of a ~slummer~ front end is likely to be within
+    Parenscript files. The ~slummer new~ command generated an ~app.paren~ that
+    looks like this:
 
 #+begin_src lisp
 (defmodule *some-kludge*
@@ -163,4 +167,5 @@ Building project ...
    4. [ ] In-Browser REPL (would probably be a Parenscript application that
       knows parenscript - one problem would be access to the ~defpsmacro~ forms
       defined in ~slummer~.)
+   5. [ ] User-defined project templates to pass to ~slummer new~.
 
