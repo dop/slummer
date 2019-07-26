@@ -162,7 +162,7 @@ Building project ...
       ~defpage~ macro you see above. Preferably the layouts could compose and
       nest.
    2. [ ] Better JS situation
-      - [ ] Generate modern JS code (at least) ES6
+      - [ ] Generate modern JS code (at least ES6)
       - [ ] Support JS modules natively, instead of the immediate function
         approach that ~slummer~ presently uses.
       - [ ] async/await support (would require augmenting / replacing Parenscript)
