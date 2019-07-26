@@ -152,7 +152,11 @@ Building project ...
    Pracctically everything. I am writing ~slummer~ because I want to enjoy
    writing web frontends again. There are a number of features and modes of
    thought that I would like to support in ~slummer~ that are presently missing.
-   Notably, here is a list of pie-in-the-sky desires:
+   
+   It is quite possible that Parenscript will need to be replaced or updated in
+   the project.
+
+   My most salient aims include the following:
 
    1. [ ] Forms for defining and using common kinds of layouts - rather like the
       ~defpage~ macro you see above. Preferably the layouts could compose and
@@ -162,8 +166,8 @@ Building project ...
       - [ ] Support JS modules natively, instead of the immediate function
         approach that ~slummer~ presently uses.
       - [ ] async/await support (would require augmenting / replacing Parenscript)
-   3. [ ] Some how hack basic support for conditions and restarts in the
-      Javascript environment. (algebraic effects anyone?)
+   3. [ ] Basic support for conditions and restarts in the Javascript
+      environment. (algebraic effects anyone?)
    4. [ ] In-Browser REPL (would probably be a Parenscript application that
       knows parenscript - one problem would be access to the ~defpsmacro~ forms
       defined in ~slummer~.)
