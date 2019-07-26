@@ -110,7 +110,7 @@ Building project ...
 
   ;;; IMPORTS
   (import-from (*slummer* *html*) p div button)
-  (import-from *slummer* attach-view on)
+  (import-from *slummer* on)
   (import-from (*slummer* *util*) list)
 
   ;;; MODULE CODE
