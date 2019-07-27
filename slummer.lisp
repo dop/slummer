@@ -368,7 +368,6 @@ is bound to the LOCAL symbol.  This lets you avoid name conflicts."
 ;;    - :COPY
 ;;    - :PARENSCRIPT
 ;;    - :LASS
-;;    - :SPINNERET
 ;;
 ;; For all file types except :COPY, the file will first be read into lisp in the
 ;; current environment, and, using the appropriate library, will be compiled to

@@ -168,7 +168,7 @@ Building project ...
         approach that ~slummer~ presently uses.
       - [ ] async/await support (would require augmenting / replacing Parenscript)
       - [ ] generators and yeild
-      - [ ] utilize for-of and for-in loops in generated output.
+      - [ ] utilize for-of loops in generated output when appropriate.
    3. [ ] Basic support for conditions and restarts in the Javascript
       environment. ([[https://www.reddit.com/r/LispMemes/comments/chw574/algebraic_effects/]["algebraic effects"]] anyone? LOL)
    4. [ ] In-Browser REPL (would probably be a Parenscript application that
