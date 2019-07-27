@@ -3,7 +3,7 @@
 (named-readtables:in-readtable :parenscript)
 (in-package #:slummer)
 
-(defparameter +slummer-version+ '(0 4 0))
+(defparameter +slummer-version+ '(0 4 1))
 
 ;; the default is 1.3
 (setf ps:*js-target-version* "1.8.5")
@@ -99,7 +99,6 @@ evaluates to the object first.
                (if (not (equal "undefined" (typeof (ps:@ arg struct))))
                    (setf profile (+ profile (ps:@ arg struct)))
                    (setf profile (+ profile "__unspecified__"))))
-             (@> console (log profile))
              (apply (getprop ,name profile) args))))
 
        (setf (getprop ,name ,profile) (lambda ,arg-list ,@body)))))
