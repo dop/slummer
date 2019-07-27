@@ -161,14 +161,16 @@ Building project ...
       ~defpage~ macro you see above. Preferably the layouts could compose and
       nest.
    2. [ ] Better JS situation
-      - [ ] Generate modern JS code (at least ES6)
+      - [ ] Generate modern JS code (i.e. ES6's lexical bindings, destructuring,
+        etc) for more readable output. (One of the goals is to generate output
+        that some non-lisper wouldn't mind reading).
       - [ ] Support JS modules natively, instead of the immediate function
         approach that ~slummer~ presently uses.
       - [ ] async/await support (would require augmenting / replacing Parenscript)
       - [ ] generators and yeild
       - [ ] utilize for-of and for-in loops in generated output.
    3. [ ] Basic support for conditions and restarts in the Javascript
-      environment. (algebraic effects anyone?)
+      environment. ([[https://www.reddit.com/r/LispMemes/comments/chw574/algebraic_effects/]["algebraic effects"]] anyone? LOL)
    4. [ ] In-Browser REPL (would probably be a Parenscript application that
       knows parenscript - one problem would be access to the ~defpsmacro~ forms
       defined in ~slummer~.)
