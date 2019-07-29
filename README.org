@@ -163,7 +163,7 @@ Building project ...
    2. [ ] Better JS situation
       - [ ] Generate modern JS code (i.e. ES6's lexical bindings, destructuring,
         etc) for more readable output. (One of the goals is to generate output
-        that some non-lisper wouldn't mind reading).
+        that some random JS dev wouldn't mind reading).
       - [ ] Support JS modules natively, instead of the immediate function
         approach that ~slummer~ presently uses.
       - [ ] async/await support (would require augmenting / replacing Parenscript)
